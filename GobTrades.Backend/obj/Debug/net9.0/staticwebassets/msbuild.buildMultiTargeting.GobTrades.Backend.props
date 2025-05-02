@@ -1,0 +1,3 @@
+﻿<Project>
+  <Import Project="..\build\GobTrades.Backend.props" />
+</Project>

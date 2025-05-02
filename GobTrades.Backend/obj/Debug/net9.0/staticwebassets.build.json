@@ -1,0 +1,12 @@
+{
+  "Version": 1,
+  "Hash": "fVvhRc56LrSIVQg2sSn1k9ufAezN3r2hQ7hMd2ffKPg=",
+  "Source": "GobTrades.Backend",
+  "BasePath": "_content/GobTrades.Backend",
+  "Mode": "Default",
+  "ManifestType": "Build",
+  "ReferencedProjectsConfiguration": [],
+  "DiscoveryPatterns": [],
+  "Assets": [],
+  "Endpoints": []
+}
