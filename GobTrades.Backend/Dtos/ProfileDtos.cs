@@ -1,13 +1,67 @@
-using System; // Required for DateTime
-using System.Collections.Generic; // Required for List
+// MODIFIED: DTOs for profile/stall management for Phase 1.
+
+using System;
+using System.Collections.Generic;
 using System.ComponentModel.DataAnnotations;
-using MongoDB.Bson;
 
 namespace GobTrades.Backend.Dtos
 {
-    public class UserProfileDto
+    // DTO for individual items when updating/creating a stall
+    public class UpdateItemDto
+    {
+        // Id is optional: present if updating an existing item, null/absent for a new item.
+        // Backend will use this to diff. For Phase 1, client might not send this if all items are treated as new on each save.
+        // However, for future item editing, it's good to have.
+        public string? Id { get; set; } // Existing MongoDB ObjectId of the item if updating
+
+        // public string? LocalId { get; set; } // Client-side temporary ID, useful if backend needs to map responses to specific new items. Not strictly needed for Phase 1 if backend returns the whole updated stall.
+
+        [Required]
+        public string ItemName { get; set; } = null!;
+
+        [Required]
+        public string ImageFilename { get; set; } = null!; // Filename derived by client for Phase 1
+    }
+
+    // DTO for creating/updating the user's stall
+    public class UpdateProfileRequestDto
+    {
+        // GoblinName & PfpIdentifier could be here if they are updatable via this endpoint.
+        // For Phase 1, assuming they are set during initial POST /users and not changed here.
+
+        [Required]
+        [MaxLength(10, ErrorMessage = "Cannot have more than 10 items.")]
+        public List<UpdateItemDto> Items { get; set; } = new List<UpdateItemDto>();
+
+        [Required(ErrorMessage = "Offered items description is required.")]
+        public string OfferedItemsDescription { get; set; } = string.Empty;
+
+        [Required(ErrorMessage = "Wanted items description is required.")]
+        public string WantedItemsDescription { get; set; } = string.Empty;
+
+        [MaxLength(4, ErrorMessage = "Maximum of 4 offered item tags.")]
+        public List<string> OfferedItemTags { get; set; } = new List<string>();
+
+        [MaxLength(4, ErrorMessage = "Maximum of 4 wanted tags.")]
+        public List<string> WantsTags { get; set; } = new List<string>();
+
+        // public List<string>? RemovedItemIds { get; set; } // For Phase 2+ to explicitly signal item deletions
+    }
+
+    // DTO for representing an item in responses
+    public class ItemDto
     {
         public string Id { get; set; } = null!;
+        public string ItemName { get; set; } = null!;
+        public string ImageFilename { get; set; } = null!;
+        public DateTime CreatedAt { get; set; }
+        public DateTime UpdatedAt { get; set; }
+    }
+
+    // DTO for representing a user's profile/stall in responses
+    public class UserProfileDto
+    {
+        public string Id { get; set; } = null!; // MongoDB ObjectId
         public string Uuid { get; set; } = null!;
         public string GoblinName { get; set; } = null!;
         public string PfpIdentifier { get; set; } = null!;
@@ -22,72 +76,19 @@ namespace GobTrades.Backend.Dtos
         public DateTime UpdatedAt { get; set; }
     }
 
-    public class ItemDto
-    {
-        public string Id { get; set; } = null!;
-        public string ImageFilename { get; set; } = null!;
-        public string ItemName { get; set; } = null!;
-        public string? Description { get; set; }
-        public DateTime CreatedAt { get; set; }
-        public DateTime UpdatedAt { get; set; }
-    }
-
-    public class FetchProfilesParamsDto
-    {
-        public int Page { get; set; } = 1;
-        public int Limit { get; set; } = 10;
-        public string? OfferedItemTags { get; set; }
-        public string? WantsTags { get; set; }
-        public string? SortBy { get; set; } = "lastActive";
-        public string? SearchTerm { get; set; }
-    }
-
-    public class FetchProfilesResponseDto : PaginatedResponseDto<UserProfileDto> { }
-
-    public class FetchProfileResponseDto : UserProfileDto { }
-
-    public class UpdateProfileRequestDto
-    {
-        [Required]
-        [MaxLength(10)]
-        public List<UpdateItemDto> Items { get; set; } = new List<UpdateItemDto>();
-
-        [Required]
-        [MaxLength(4)]
-        public List<string> OfferedItemTags { get; set; } = new List<string>();
-
-        [Required]
-        [MaxLength(4)]
-        public List<string> WantsTags { get; set; } = new List<string>();
-
-        [Required]
-        public string OfferedItemsDescription { get; set; } = string.Empty;
-
-        [Required]
-        public string WantedItemsDescription { get; set; } = string.Empty;
-    }
-
-    public class UpdateItemDto
-    {
-        [RegularExpression("^[a-f\\d]{24}$", ErrorMessage = "Invalid ObjectId format.")]
-        public string? Id { get; set; }
-
-        public string? LocalId { get; set; }
-
-        [Required]
-        public string ItemName { get; set; } = null!;
-
-        public string? Description { get; set; }
-
-        [Required]
-        public string ImageFilename { get; set; } = null!;
-    }
-
-    public class UpdateProfileResponseDto : UserProfileDto { }
-
-    public class LikeProfileResponseDto
-    {
-        public bool Success { get; set; }
-        public int? NewLikeCount { get; set; }
-    }
+    public record UpdateProfileResponseDto(
+        string Id,
+        string Uuid,
+        string GoblinName,
+        string PfpIdentifier,
+        List<ItemDto> Items,
+        List<string> OfferedItemTags,
+        List<string> WantsTags,
+        string OfferedItemsDescription,
+        string WantedItemsDescription,
+        int LikeCount,
+        DateTime LastActive,
+        DateTime CreatedAt,
+        DateTime UpdatedAt
+    ); // Using record for concise DTO, can also be class like UserProfileDto
 }

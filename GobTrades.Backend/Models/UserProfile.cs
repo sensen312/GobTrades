@@ -1,6 +1,9 @@
+// MODIFIED: Ensured properties align with Phase 1 DTOs and Walkthrough.
+
 using MongoDB.Bson;
 using MongoDB.Bson.Serialization.Attributes;
-using System.Collections.Generic; // Required for List
+using System;
+using System.Collections.Generic;
 
 namespace GobTrades.Backend.Models
 {
@@ -8,10 +11,10 @@ namespace GobTrades.Backend.Models
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = null!;
+        public string Id { get; set; } = null!; // Server-generated
 
         [BsonElement("uuid")]
-        public string Uuid { get; set; } = null!;
+        public string Uuid { get; set; } = null!; // Client-generated UUID
 
         [BsonElement("goblinName")]
         public string GoblinName { get; set; } = null!;

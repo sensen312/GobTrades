@@ -1,13 +1,15 @@
+// MODIFIED: Implementation for ProfileService for Phase 1.
+
 using GobTrades.Backend.Data;
 using GobTrades.Backend.Dtos;
 using GobTrades.Backend.Models;
 using Microsoft.Extensions.Logging;
 using MongoDB.Driver;
 using MongoDB.Bson;
-using System; // Required for DateTime, Exception
-using System.Linq; // Required for Select
-using System.Threading.Tasks; // Required for Task
-using System.Collections.Generic; // Required for List
+using System;
+using System.Linq;
+using System.Threading.Tasks;
+using System.Collections.Generic;
 
 namespace GobTrades.Backend.Services
 {
@@ -22,156 +24,121 @@ namespace GobTrades.Backend.Services
             _logger = logger;
         }
 
-        public Task<FetchProfilesResponseDto> GetFeedProfilesAsync(FetchProfilesParamsDto queryParams, string? currentUserUuid)
+        public async Task<(CreateUserResponseDto? User, string? ErrorMessage)> CreateInitialUserAsync(CreateUserRequestDto userData)
         {
-            _logger.LogInformation("GetFeedProfilesAsync called (Phase 1 Stub)");
-            var dummyResponse = new FetchProfilesResponseDto
+            _logger.LogInformation("Attempting to create initial user for UUID: {UserUuid}", userData.Uuid);
+            var existingProfile = await _context.UserProfiles.Find(p => p.Uuid == userData.Uuid).FirstOrDefaultAsync();
+            if (existingProfile != null)
             {
-                Items = new List<UserProfileDto>(),
-                HasMore = false,
-                CurrentPage = queryParams.Page,
+                _logger.LogWarning("User with UUID {UserUuid} already exists.", userData.Uuid);
+                return (null, "User already exists with this UUID.");
+            }
+
+            var now = DateTime.UtcNow;
+            var newUserProfile = new UserProfile
+            {
+                Id = ObjectId.GenerateNewId().ToString(), // Server generates MongoDB ID
+                Uuid = userData.Uuid,
+                GoblinName = userData.GoblinName,
+                PfpIdentifier = userData.PfpIdentifier,
+                Items = new List<Item>(), // Initialize with empty stall
+                OfferedItemTags = new List<string>(),
+                WantsTags = new List<string>(),
+                OfferedItemsDescription = string.Empty,
+                WantedItemsDescription = string.Empty,
+                LikeCount = 0,
+                LastActive = now,
+                CreatedAt = now,
+                UpdatedAt = now
             };
-            return Task.FromResult(dummyResponse);
+
+            try
+            {
+                await _context.UserProfiles.InsertOneAsync(newUserProfile);
+                _logger.LogInformation("Successfully created initial user profile for UUID: {UserUuid}, DB ID: {DbId}", newUserProfile.Uuid, newUserProfile.Id);
+                return (MapToCreateUserResponseDto(newUserProfile), null);
+            }
+            catch (MongoWriteException ex)
+            {
+                _logger.LogError(ex, "MongoDB write error creating initial user for UUID: {UserUuid}", userData.Uuid);
+                if (ex.WriteError.Category == ServerErrorCategory.DuplicateKey)
+                {
+                    return (null, "User already exists (database constraint).");
+                }
+                return (null, "Database error during user creation.");
+            }
+            catch (Exception ex)
+            {
+                _logger.LogError(ex, "Generic error creating initial user for UUID: {UserUuid}", userData.Uuid);
+                return (null, "An unexpected error occurred during user creation.");
+            }
         }
 
         public async Task<UserProfileDto?> GetMyProfileAsync(string userUuid)
         {
-            _logger.LogInformation("GetMyProfileAsync called for UUID: {UserUuid}", userUuid);
-            var profile = await _context.UserProfiles
-                                        .Find(p => p.Uuid == userUuid)
-                                        .FirstOrDefaultAsync();
-            return profile == null ? null : MapToUserProfileDto(profile);
-        }
-
-        public async Task<UserProfileDto?> GetProfileByUuidAsync(string targetUuid, string? currentUserUuid)
-        {
-             _logger.LogInformation("GetProfileByUuidAsync called for Target UUID: {TargetUuid}", targetUuid);
-             var profile = await _context.UserProfiles
-                                        .Find(p => p.Uuid == targetUuid)
-                                        .FirstOrDefaultAsync();
-             return profile == null ? null : MapToUserProfileDto(profile);
+            _logger.LogInformation("Fetching profile/stall for user UUID: {UserUuid}", userUuid);
+            var profile = await _context.UserProfiles.Find(p => p.Uuid == userUuid).FirstOrDefaultAsync();
+            if (profile == null)
+            {
+                _logger.LogInformation("No profile found for user UUID: {UserUuid}", userUuid);
+                return null;
+            }
+            return MapToUserProfileDto(profile);
         }
 
         public async Task<(UserProfileDto? UpdatedProfile, string? ErrorMessage)> UpdateMyProfileAsync(string userUuid, UpdateProfileRequestDto profileData)
         {
-            _logger.LogInformation("UpdateMyProfileAsync called for UUID: {UserUuid}", userUuid);
+            _logger.LogInformation("Attempting to update/create stall for user UUID: {UserUuid}", userUuid);
             var filter = Builders<UserProfile>.Filter.Eq(p => p.Uuid, userUuid);
             var existingProfile = await _context.UserProfiles.Find(filter).FirstOrDefaultAsync();
-            DateTime now = DateTime.UtcNow;
+            var now = DateTime.UtcNow;
+
+            UserProfile profileToSave;
 
             if (existingProfile == null)
             {
-                 _logger.LogInformation("Profile not found for UUID {UserUuid}. Creating new profile.", userUuid);
-                 // Fetch potential initial data if POST /users was used
-                 var initialUserData = await _context.UserProfiles.Find(filter).FirstOrDefaultAsync();
-                 if (initialUserData == null) {
-                      return (null, "User profile base does not exist. Initial setup might be required via POST /api/users.");
-                 }
-                 existingProfile = initialUserData;
-                 existingProfile.CreatedAt = now;
+                _logger.LogWarning("Profile not found for UUID {UserUuid} during UpdateMyProfileAsync. This implies initial user creation might have been skipped or failed.", userUuid);
+                return (null, "User profile base does not exist. Please ensure initial setup (POST /api/users) was completed.");
             }
+            profileToSave = existingProfile;
 
-            existingProfile.OfferedItemTags = profileData.OfferedItemTags;
-            existingProfile.WantsTags = profileData.WantsTags;
-            existingProfile.OfferedItemsDescription = profileData.OfferedItemsDescription;
-            existingProfile.WantedItemsDescription = profileData.WantedItemsDescription;
-            existingProfile.LastActive = now;
-            existingProfile.UpdatedAt = now;
+            profileToSave.OfferedItemsDescription = profileData.OfferedItemsDescription;
+            profileToSave.WantedItemsDescription = profileData.WantedItemsDescription;
+            profileToSave.OfferedItemTags = profileData.OfferedItemTags ?? new List<string>();
+            profileToSave.WantsTags = profileData.WantsTags ?? new List<string>();
+            profileToSave.LastActive = now;
+            profileToSave.UpdatedAt = now;
 
-            // TODO Phase 2: Implement robust item mapping/diffing logic. This basic map is placeholder.
-            existingProfile.Items = profileData.Items.Select(dto => new Item {
-                Id = !string.IsNullOrEmpty(dto.Id) && ObjectId.TryParse(dto.Id, out _) ? dto.Id : ObjectId.GenerateNewId().ToString(),
-                ItemName = dto.ItemName,
-                Description = dto.Description,
-                ImageFilename = dto.ImageFilename,
-                CreatedAt = existingProfile.Items.FirstOrDefault(i => i.Id == dto.Id)?.CreatedAt ?? now, // Preserve original create date if possible
+            profileToSave.Items = profileData.Items.Select(itemDto => new Item
+            {
+                Id = ObjectId.GenerateNewId().ToString(),
+                ItemName = itemDto.ItemName,
+                ImageFilename = itemDto.ImageFilename,
+                CreatedAt = now,
                 UpdatedAt = now
             }).ToList();
 
-             try
+            try
             {
-                var replaceResult = await _context.UserProfiles.ReplaceOneAsync(filter, existingProfile, new ReplaceOptions { IsUpsert = true });
-
-                // --- CORRECTED FAILURE CHECK ---
-                bool wasSuccessful = replaceResult.IsAcknowledged &&
-                                     (replaceResult.MatchedCount > 0 || replaceResult.ModifiedCount > 0 || (replaceResult.UpsertedId != null && !replaceResult.UpsertedId.IsBsonNull));
-
-                if (!wasSuccessful)
-                // --- END CORRECTION ---
-                 {
-                      _logger.LogWarning("UpdateMyProfileAsync failed to update/upsert profile for UUID: {UserUuid}. Matched:{Match}, Modified:{Mod}, UpsertedId:{UpId}",
-                          userUuid, replaceResult.MatchedCount, replaceResult.ModifiedCount, replaceResult.UpsertedId);
-                     return (null, "Failed to save stall data. The operation was not acknowledged or did not modify/insert any document.");
-                 }
-
-                 _logger.LogInformation("Profile updated/created successfully for UUID: {UserUuid}. Matched:{Match}, Modified:{Mod}, UpsertedId:{UpId}",
-                    userUuid, replaceResult.MatchedCount, replaceResult.ModifiedCount, replaceResult.UpsertedId);
-
-                 var updatedProfile = await _context.UserProfiles.Find(filter).FirstOrDefaultAsync(); // Re-fetch after update
-                 return (updatedProfile != null ? MapToUserProfileDto(updatedProfile) : null, null);
+                var result = await _context.UserProfiles.ReplaceOneAsync(filter, profileToSave, new ReplaceOptions { IsUpsert = true });
+                if (result.IsAcknowledged && (result.MatchedCount > 0 || result.ModifiedCount > 0 || result.UpsertedId != null))
+                {
+                    _logger.LogInformation("Successfully updated/upserted profile for UUID: {UserUuid}. Matched: {Matched}, Modified: {Modified}, UpsertedId: {UpsertedId}",
+                        userUuid, result.MatchedCount, result.ModifiedCount, result.UpsertedId?.ToString());
+                    var updatedProfileFromDb = await _context.UserProfiles.Find(filter).FirstOrDefaultAsync();
+                    return (updatedProfileFromDb != null ? MapToUserProfileDto(updatedProfileFromDb) : null, null);
+                }
+                else
+                {
+                    _logger.LogWarning("Profile update for UUID {UserUuid} was not acknowledged or did not modify/upsert any document.", userUuid);
+                    return (null, "Failed to save stall data to the database.");
+                }
             }
             catch (Exception ex)
             {
                 _logger.LogError(ex, "Error updating profile for UUID: {UserUuid}", userUuid);
-                return (null, "An error occurred while saving stall data.");
+                return (null, "An unexpected error occurred while saving stall data.");
             }
-        }
-
-        public Task<(bool Success, int? NewLikeCount, string? ErrorMessage)> LikeProfileAsync(string likerUuid, string targetUserUuid)
-        {
-            _logger.LogInformation("LikeProfileAsync called by {LikerUuid} for {TargetUserUuid} (Phase 1 Stub)", likerUuid, targetUserUuid);
-            // TODO Phase 3: Implement logic
-            return Task.FromResult<(bool Success, int? NewLikeCount, string? ErrorMessage)>((true, 1, null));
-        }
-
-        public async Task<(CreateUserResponseDto? User, string? ErrorMessage)> CreateInitialUserAsync(CreateUserRequestDto userData)
-        {
-             _logger.LogInformation("CreateInitialUserAsync called for UUID: {UserUuid}", userData.Uuid);
-             var existing = await _context.UserProfiles.Find(u => u.Uuid == userData.Uuid).FirstOrDefaultAsync();
-             if (existing != null)
-             {
-                 _logger.LogWarning("Attempted to create initial user, but UUID {UserUuid} already exists.", userData.Uuid);
-                 return (null, "User already exists.");
-             }
-
-             var now = DateTime.UtcNow;
-             var newUser = new UserProfile
-             {
-                 Id = ObjectId.GenerateNewId().ToString(),
-                 Uuid = userData.Uuid,
-                 GoblinName = userData.GoblinName,
-                 PfpIdentifier = userData.PfpIdentifier,
-                 Items = new List<Item>(),
-                 OfferedItemTags = new List<string>(),
-                 WantsTags = new List<string>(),
-                 OfferedItemsDescription = string.Empty,
-                 WantedItemsDescription = string.Empty,
-                 LikeCount = 0,
-                 LastActive = now,
-                 CreatedAt = now,
-                 UpdatedAt = now
-             };
-
-             try
-             {
-                 await _context.UserProfiles.InsertOneAsync(newUser);
-                 _logger.LogInformation("Initial user created successfully for UUID: {UserUuid}", userData.Uuid);
-                 var responseDto = new CreateUserResponseDto
-                 {
-                     Id = newUser.Id,
-                     Uuid = newUser.Uuid,
-                     GoblinName = newUser.GoblinName,
-                     PfpIdentifier = newUser.PfpIdentifier,
-                     CreatedAt = newUser.CreatedAt,
-                     UpdatedAt = newUser.UpdatedAt
-                 };
-                 return (responseDto, null);
-             }
-             catch (Exception ex)
-             {
-                 _logger.LogError(ex, "Error creating initial user for UUID: {UserUuid}", userData.Uuid);
-                 return (null, "An error occurred during initial user creation.");
-             }
         }
 
         private UserProfileDto MapToUserProfileDto(UserProfile profile)
@@ -182,10 +149,10 @@ namespace GobTrades.Backend.Services
                 Uuid = profile.Uuid,
                 GoblinName = profile.GoblinName,
                 PfpIdentifier = profile.PfpIdentifier,
-                Items = profile.Items?.Select(item => new ItemDto {
+                Items = profile.Items?.Select(item => new ItemDto
+                {
                     Id = item.Id,
                     ItemName = item.ItemName,
-                    Description = item.Description,
                     ImageFilename = item.ImageFilename,
                     CreatedAt = item.CreatedAt,
                     UpdatedAt = item.UpdatedAt
@@ -196,6 +163,19 @@ namespace GobTrades.Backend.Services
                 WantedItemsDescription = profile.WantedItemsDescription,
                 LikeCount = profile.LikeCount,
                 LastActive = profile.LastActive,
+                CreatedAt = profile.CreatedAt,
+                UpdatedAt = profile.UpdatedAt
+            };
+        }
+
+        private CreateUserResponseDto MapToCreateUserResponseDto(UserProfile profile)
+        {
+            return new CreateUserResponseDto
+            {
+                Id = profile.Id,
+                Uuid = profile.Uuid,
+                GoblinName = profile.GoblinName,
+                PfpIdentifier = profile.PfpIdentifier,
                 CreatedAt = profile.CreatedAt,
                 UpdatedAt = profile.UpdatedAt
             };

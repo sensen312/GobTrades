@@ -1,16 +1,15 @@
+// MODIFIED: Interface for ProfileService for Phase 1.
+
 using GobTrades.Backend.Dtos;
-using GobTrades.Backend.Models;
-using System.Threading.Tasks; // Required for Task
+using System.Threading.Tasks;
 
 namespace GobTrades.Backend.Services
 {
     public interface IProfileService
     {
-        Task<FetchProfilesResponseDto> GetFeedProfilesAsync(FetchProfilesParamsDto queryParams, string? currentUserUuid);
-        Task<UserProfileDto?> GetMyProfileAsync(string userUuid);
-        Task<UserProfileDto?> GetProfileByUuidAsync(string targetUuid, string? currentUserUuid);
-        Task<(UserProfileDto? UpdatedProfile, string? ErrorMessage)> UpdateMyProfileAsync(string userUuid, UpdateProfileRequestDto profileData);
-        Task<(bool Success, int? NewLikeCount, string? ErrorMessage)> LikeProfileAsync(string likerUuid, string targetUserUuid);
         Task<(CreateUserResponseDto? User, string? ErrorMessage)> CreateInitialUserAsync(CreateUserRequestDto userData);
+        Task<UserProfileDto?> GetMyProfileAsync(string userUuid);
+        Task<(UserProfileDto? UpdatedProfile, string? ErrorMessage)> UpdateMyProfileAsync(string userUuid, UpdateProfileRequestDto profileData);
+        // GetFeedProfilesAsync, GetProfileByUuidAsync, LikeProfileAsync will be for Phase 2+
     }
 }

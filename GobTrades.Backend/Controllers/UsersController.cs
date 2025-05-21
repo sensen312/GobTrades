@@ -1,10 +1,11 @@
+// MODIFIED: Controller for user creation.
+
 using GobTrades.Backend.Dtos;
 using GobTrades.Backend.Services;
-using Microsoft.AspNetCore.Http; // Required for StatusCodes
 using Microsoft.AspNetCore.Mvc;
 using Microsoft.Extensions.Logging;
+using System.Threading.Tasks;
 using System; // Required for StringComparison
-using System.Threading.Tasks; // Required for Task
 
 namespace GobTrades.Backend.Controllers
 {
@@ -13,7 +14,7 @@ namespace GobTrades.Backend.Controllers
     public class UsersController : ControllerBase
     {
         private readonly ILogger<UsersController> _logger;
-        private readonly IProfileService _profileService;
+        private readonly IProfileService _profileService; // ProfileService handles user creation logic
 
         public UsersController(ILogger<UsersController> logger, IProfileService profileService)
         {
@@ -23,22 +24,36 @@ namespace GobTrades.Backend.Controllers
 
         [HttpPost]
         [ProducesResponseType(typeof(CreateUserResponseDto), StatusCodes.Status201Created)]
-        [ProducesResponseType(StatusCodes.Status400BadRequest)]
-        [ProducesResponseType(StatusCodes.Status409Conflict)] // For user already exists
+        [ProducesResponseType(typeof(string), StatusCodes.Status400BadRequest)]
+        [ProducesResponseType(typeof(string), StatusCodes.Status409Conflict)]
         public async Task<IActionResult> CreateUser([FromBody] CreateUserRequestDto userData)
         {
-             _logger.LogInformation("POST /users called for UUID: {UserUuid}", userData.Uuid);
-             var (user, errorMessage) = await _profileService.CreateInitialUserAsync(userData);
+            if (!ModelState.IsValid)
+            {
+                return BadRequest(ModelState);
+            }
 
-             if (user == null)
-             {
-                 if (errorMessage != null && errorMessage.Contains("already exists", StringComparison.OrdinalIgnoreCase))
-                 {
-                     return Conflict(errorMessage);
-                 }
-                 return BadRequest(errorMessage ?? "Failed to create user.");
-             }
-             return CreatedAtAction(nameof(ProfilesController.GetProfileByUuid), "Profiles", new { uuid = user.Uuid }, user);
+            _logger.LogInformation("POST /api/users called for UUID: {UserUuid}", userData.Uuid);
+            var (userResponse, errorMessage) = await _profileService.CreateInitialUserAsync(userData);
+
+            if (userResponse == null)
+            {
+                if (errorMessage != null && errorMessage.Contains("already exists", StringComparison.OrdinalIgnoreCase))
+                {
+                    _logger.LogWarning("Conflict: User with UUID {UserUuid} already exists.", userData.Uuid);
+                    return Conflict(new { message = errorMessage });
+                }
+                _logger.LogError("Bad Request: Failed to create user. Error: {ErrorMessage}", errorMessage);
+                return BadRequest(new { message = errorMessage ?? "Failed to create user." });
+            }
+
+            _logger.LogInformation("User created successfully. DB ID: {DbId}, UUID: {UserUuid}", userResponse.Id, userResponse.Uuid);
+            return CreatedAtAction(
+                actionName: nameof(ProfilesController.GetMyStall), 
+                controllerName: "Profiles", 
+                routeValues: new { /* uuid = userResponse.Uuid */ }, 
+                value: userResponse
+            );
         }
     }
 }

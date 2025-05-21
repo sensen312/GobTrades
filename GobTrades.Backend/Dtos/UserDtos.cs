@@ -1,4 +1,6 @@
-using System; // Required for DateTime
+// MODIFIED: DTOs for user creation for Phase 1.
+
+using System;
 using System.ComponentModel.DataAnnotations;
 
 namespace GobTrades.Backend.Dtos
@@ -15,9 +17,10 @@ namespace GobTrades.Backend.Dtos
         public string PfpIdentifier { get; set; } = null!;
     }
 
+    // Response for user creation, maps from UserProfile model
     public class CreateUserResponseDto
     {
-        public string Id { get; set; } = null!;
+        public string Id { get; set; } = null!; // MongoDB ObjectId as string
         public string Uuid { get; set; } = null!;
         public string GoblinName { get; set; } = null!;
         public string PfpIdentifier { get; set; } = null!;
