@@ -37,15 +37,14 @@ export const useChatStore = create<ChatState>((set, get) => ({
   error: null,
   
   fetchChatsAndRequests: async () => {
-    // Implementation for future phases
+    // Full implementation for future phases
   },
   fetchMessages: async (chatId) => {
-    // Implementation for future phases
+    // Full implementation for future phases
   },
   addMessage: (message) => {
     set((state) => {
       const chatMessages = state.messages[message.chatId] || [];
-      // Avoid duplicates
       if (chatMessages.some(m => m._id === message._id)) {
         return {};
       }
@@ -82,6 +81,6 @@ export const useChatStore = create<ChatState>((set, get) => ({
   setConnectionStatus: (status) => set({ connectionStatus: status }),
   setActiveChatId: (chatId) => set({ activeChatId: chatId }),
   markChatAsRead: async (chatId) => {
-    // Implementation for future phases
+    // Full implementation for future phases
   },
 }));

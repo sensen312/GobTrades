@@ -1,30 +1,28 @@
+﻿// src/features/messaging/components/ChatPreviewCard.tsx
 import React from 'react';
 import { HStack, VStack, Pressable } from '@gluestack-ui/themed';
 import { formatDistanceToNowStrict } from 'date-fns';
 import { ChatPreview } from '../../../types';
 import ThemedText from '../../../components/ThemedText';
 import UserPfpDisplay from '../../../components/UserPfpDisplay';
-import { useNavigation } from '@react-navigation/native'; // Import useNavigation
-import { MessagesScreenProps } from '../../../navigation/types'; // Import screen props type
+import { useNavigation } from '@react-navigation/native';
+import { MessagesScreenNavigationProp } from '../../../navigation/types';
 
 interface ChatPreviewCardProps {
   chat: ChatPreview;
-  // Remove onPress prop, handle navigation internally
 }
 
 const ChatPreviewCard: React.FC<ChatPreviewCardProps> = ({ chat }) => {
-  const navigation = useNavigation<MessagesScreenProps<'MessagingList'>['navigation']>(); // Typed navigation
+  const navigation = useNavigation<MessagesScreenNavigationProp<'MessagingListScreen'>>();
   const timeAgo = formatDistanceToNowStrict(new Date(chat.lastMessageAt), { addSuffix: true });
   const isUnread = chat.unreadCount > 0;
 
   const handlePress = () => {
-      // Navigate to the Chat screen, passing necessary parameters
-      navigation.navigate('Chat', {
-          chatId: chat._id, // Pass existing chat ID
-          listingId: chat.associatedListingId,
-          otherUserId: chat.otherParticipant._id, // Pass the other user's ID
-          otherUserName: chat.otherParticipant.goblinName, // Pass name for header title
-          otherUserPfpId: chat.otherParticipant.pfpIdentifier, // Pass PFP if needed
+      navigation.navigate('ChatScreen', {
+          chatId: chat._id,
+          targetUserUuid: chat.otherParticipant.uuid,
+          targetUserName: chat.otherParticipant.goblinName,
+          targetUserPfpIdentifier: chat.otherParticipant.pfpIdentifier,
       });
   };
 
@@ -49,7 +47,6 @@ const ChatPreviewCard: React.FC<ChatPreviewCardProps> = ({ chat }) => {
              {chat.lastMessagePreview || '...'}
           </ThemedText>
         </VStack>
-        {/* Optional: Display unread count badge */}
       </HStack>
     </Pressable>
   );

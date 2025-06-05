@@ -1,44 +1,48 @@
 ﻿// src/navigation/types.ts
-import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack'; // Added NativeStackNavigationProp
-import type { BottomTabScreenProps, BottomTabNavigationProp } from '@react-navigation/bottom-tabs'; // Added BottomTabNavigationProp
+import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
+import type { BottomTabScreenProps, BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
 import type { NavigatorScreenParams, CompositeScreenProps, RouteProp } from '@react-navigation/native';
 
 export type AuthStackParamList = {
   AuthLoading: undefined;
   Setup: undefined;
+  MyStallSetup: { isFirstSetup: true };
 };
+
 export type ProfileFeedStackParamList = {
   ProfileFeedScreen: undefined;
+  ProfileDetailScreen: { userUuid: string };
 };
+
 export type MessagesStackParamList = {
   MessagingListScreen: undefined;
+  ChatScreen: {
+    chatId?: string;
+    targetUserUuid: string;
+    targetUserName?: string;
+    targetUserPfpIdentifier?: string;
+    contextItemId?: string;
+  };
+  ProfileDetailScreen: { userUuid: string };
 };
+
 export type MainTabsParamList = {
   Trades: NavigatorScreenParams<ProfileFeedStackParamList>;
-  AddItem: { isFirstSetup?: boolean } | undefined;
+  MyStall: { isFirstSetup?: boolean } | undefined;
   Messages: NavigatorScreenParams<MessagesStackParamList>;
 };
+
 export type AppStackParamList = {
   Auth: NavigatorScreenParams<AuthStackParamList>;
   Main: NavigatorScreenParams<MainTabsParamList>;
   Settings: undefined;
 };
 
-// Corrected Screen Props for improved type safety with navigation objects
 export type AppScreenProps<T extends keyof AppStackParamList> = NativeStackScreenProps<AppStackParamList, T>;
+export type AuthScreenProps<T extends keyof AuthStackParamList> = CompositeScreenProps<NativeStackScreenProps<AuthStackParamList, T>, AppScreenProps<keyof AppStackParamList>>;
+export type MainTabsScreenProps<T extends keyof MainTabsParamList> = CompositeScreenProps<BottomTabScreenProps<MainTabsParamList, T>, AppScreenProps<keyof AppStackParamList>>;
+export type MessagesScreenNavigationProp<T extends keyof MessagesStackParamList> = CompositeScreenProps<NativeStackScreenProps<MessagesStackParamList, T>, MainTabsScreenProps<keyof MainTabsParamList>>['navigation'];
+export type MessagesScreenRouteProp<T extends keyof MessagesStackParamList> = CompositeScreenProps<NativeStackScreenProps<MessagesStackParamList, T>, MainTabsScreenProps<keyof MainTabsParamList>>['route'];
 
-export type AuthScreenNavigationProp<T extends keyof AuthStackParamList> = NativeStackNavigationProp<AuthStackParamList, T>;
-export type AuthScreenRouteProp<T extends keyof AuthStackParamList> = RouteProp<AuthStackParamList, T>;
-
-export type MainTabsScreenNavigationProp<T extends keyof MainTabsParamList> = BottomTabNavigationProp<MainTabsParamList, T>;
-export type MainTabsScreenRouteProp<T extends keyof MainTabsParamList> = RouteProp<MainTabsParamList, T>;
-
-export type ProfileFeedScreenNavigationProp<T extends keyof ProfileFeedStackParamList> = NativeStackNavigationProp<ProfileFeedStackParamList, T>;
-export type ProfileFeedScreenRouteProp<T extends keyof ProfileFeedStackParamList> = RouteProp<ProfileFeedStackParamList, T>;
-
-export type MessagesScreenNavigationProp<T extends keyof MessagesStackParamList> = NativeStackNavigationProp<MessagesStackParamList, T>;
-export type MessagesScreenRouteProp<T extends keyof MessagesStackParamList> = RouteProp<MessagesStackParamList, T>;
-
-
-// MyStallScreen specifically uses route params from the MainTabsParamList for 'AddItem'
-export type MyStallScreenRouteProp = RouteProp<MainTabsParamList, 'AddItem'>;
+// Correcting route prop for MyStallScreen
+export type MyStallScreenRouteProp = RouteProp<MainTabsParamList, 'MyStall'>;
