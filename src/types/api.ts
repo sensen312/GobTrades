@@ -1,5 +1,5 @@
 ﻿// src/types/api.ts
-import type { UserProfile as FullUserProfile, Message as ModelMessage, ChatPreview as ModelChatPreview, TradeRequest as ModelTradeRequest, Item as ModelItem } from './models';
+import type { UserProfile, Message, ChatPreview, TradeRequest, Item } from './models';
 
 export interface PaginatedResponse<T> {
   items: T[];
@@ -9,52 +9,60 @@ export interface PaginatedResponse<T> {
   totalPages?: number;
 }
 
+// --- User & Auth ---
 export interface CreateUserRequestDto {
   uuid: string;
   goblinName: string;
   pfpIdentifier: string;
 }
-export type CreateUserResponseDto = Pick<FullUserProfile, '_id' | 'uuid' | 'goblinName' | 'pfpIdentifier' | 'createdAt' | 'updatedAt'>;
-
-export interface UpdateItemDto {
-  localId?: string;
-  dbId?: string;
-  itemName: string;
-  imageFilename: string;
-}
-
-export interface UpdateProfileRequestDto {
-  items: UpdateItemDto[];
-  offeredItemTags: string[];
-  wantsTags: string[];
-  offeredItemsDescription: string;
-  wantedItemsDescription: string;
-  removedItemDbIds?: string[];
-}
-export type UpdateProfileResponseDto = FullUserProfile;
-export type FetchMyStallResponseDto = FullUserProfile | null;
-
-// Corrected: UserProfile in models.ts now includes 'items' and 'lastActive'
-export type ProfileFeedItemDto = Pick<FullUserProfile, '_id' | 'uuid' | 'goblinName' | 'pfpIdentifier' | 'items' | 'lastActive'>;
-export type FetchProfileFeedResponseDto = PaginatedResponse<ProfileFeedItemDto>;
-
-export interface MarketStatusResponseDto {
-  isMarketOpen: boolean;
-  endTime: string | null;
-}
-
-export interface FetchChatsAndRequestsResponseDto {
-  chats: ModelChatPreview[];
-  tradeRequests: ModelTradeRequest[];
-}
-
-export interface FetchMessagesParamsDto {
-  page?: number;
-  limit?: number;
-}
-export type FetchMessagesResponseDto = PaginatedResponse<ModelMessage>;
+export type CreateUserResponseDto = Pick<UserProfile, '_id' | 'uuid' | 'goblinName' | 'pfpIdentifier' | 'createdAt' | 'updatedAt'>;
 
 export interface DeleteUserResponseDto {
     success: boolean;
     message?: string;
 }
+
+// --- Stall / Profile ---
+export interface UpdateItemDto {
+  localId?: string; // Client-side ID for new items
+  dbId?: string;    // Server-side DB ID for existing items
+  itemName: string;
+  imageFilename: string; // Name for backend to store
+}
+
+export interface UpdateProfileRequestDto {
+  items: UpdateItemDto[];
+  offeredItemsDescription: string;
+  wantedItemsDescription: string;
+  offeredItemTags: string[];
+  wantsTags: string[];
+  removedItemDbIds?: string[];
+}
+
+export type UpdateProfileResponseDto = UserProfile;
+export type FetchMyStallResponseDto = UserProfile | null;
+
+export type ProfileFeedItemDto = Pick<UserProfile, '_id' | 'uuid' | 'goblinName' | 'pfpIdentifier' | 'items' | 'lastActive' | 'offeredItemTags' | 'wantsTags'>;
+export type FetchProfileFeedResponseDto = PaginatedResponse<ProfileFeedItemDto>;
+
+
+// --- Market ---
+export interface MarketStatusResponseDto {
+  isMarketOpen: boolean;
+  endTime: string | null;
+}
+
+// --- Messaging & Trades ---
+export interface FetchChatsAndRequestsResponseDto {
+  chats: ChatPreview[];
+  tradeRequests: TradeRequest[];
+}
+export interface FetchMessagesParamsDto {
+  page?: number;
+  limit?: number;
+}
+export type FetchMessagesResponseDto = PaginatedResponse<Message>;
+export interface UploadChatMessageImageApiDto {
+    imageFilename: string;
+}
+
