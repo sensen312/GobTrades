@@ -1,117 +1,95 @@
-// Configuration for react-native-toast-message appearance
+﻿// src/config/toastConfig.tsx
 import React from 'react';
 import { BaseToastProps } from 'react-native-toast-message';
 import { SuccessToast, ErrorToast, InfoToast } from 'react-native-toast-message';
-import { config as themeConfig } from '../theme'; // Import your theme config
+import { config as themeConfigToast } from '../theme'; // Aliased
 import { Platform } from 'react-native';
 
-// Resolves theme tokens (basic example, assumes tokens are direct color strings)
-// For complex tokens (like aliases), you might need useToken hook if used in a component context,
-// or pre-resolve them if possible.
-const resolveColor = (token: string): string => {
-    // Basic resolution, assumes direct color mapping in themeConfig.tokens.colors
-    // Extend this logic if using color modes or aliases extensively
+// Reasoning: Provides a centralized configuration for toast notifications,
+// ensuring they match the app's visual style for consistency.
+
+// Helper function to resolve color tokens from the theme.
+// Gluestack's useToken hook cannot be used outside React components, so direct access is needed here.
+const resolveColorToast = (token: string): string => {
     const colorKey = token.startsWith('$') ? token.substring(1) : token;
-    return (themeConfig.tokens.colors as any)[colorKey] || token; // Fallback to token itself
+    // Accessing colors directly from the pre-defined theme config object.
+    return (themeConfigToast.tokens.colors as Record<string, string>)[colorKey] || token;
 };
 
-const resolveFont = (token: string): string => {
+// Helper function to resolve font tokens.
+const resolveFontToast = (token: string): string => {
      const fontKey = token.startsWith('$') ? token.substring(1) : token;
-     return (themeConfig.tokens.fonts as any)[fontKey] || 'System'; // Fallback to system font
-}
+     return (themeConfigToast.tokens.fonts as Record<string, string>)[fontKey] || 'System';
+};
 
-const resolveSize = (token: string): number => {
+// Helper function to resolve font size tokens.
+const resolveSizeToast = (token: string): number => {
     const sizeKey = token.startsWith('$') ? token.substring(1) : token;
-    return (themeConfig.tokens.fontSizes as any)[sizeKey] || 14; // Fallback size
-}
+    return (themeConfigToast.tokens.fontSizes as Record<string, number>)[sizeKey] || 14;
+};
 
-const resolveRadius = (token: string): number => {
+// Helper function to resolve radii tokens.
+const resolveRadiusToast = (token: string): number => {
     const radiusKey = token.startsWith('$') ? token.substring(1) : token;
-    return (themeConfig.tokens.radii as any)[radiusKey] || 4; // Fallback radius
-}
+    return (themeConfigToast.tokens.radii as Record<string, number>)[radiusKey] || 4;
+};
 
 
 export const toastConfig = {
-  /** Success Toast */
   success: (props: BaseToastProps) => (
     <SuccessToast
       {...props}
       style={{
-          borderLeftColor: resolveColor('$successBase'),
-          width: '90%',
-          marginTop: Platform.OS === 'ios' ? 50 : 20,
-          backgroundColor: resolveColor('$successBg'),
-          borderRadius: resolveRadius('$md'),
-          borderWidth: 1,
-          borderColor: resolveColor('$successBase'),
+          borderLeftColor: resolveColorToast('$successBase'), width: '90%',
+          marginTop: Platform.OS === 'ios' ? 50 : 20, backgroundColor: resolveColorToast('$successBg'),
+          borderRadius: resolveRadiusToast('$md'), borderWidth: 1, borderColor: resolveColorToast('$successBase'),
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
-        fontSize: resolveSize('$sm'),
-        fontFamily: resolveFont('$heading'),
-        color: resolveColor('$successBase'),
-        fontWeight: '600',
+        fontSize: resolveSizeToast('$sm'), fontFamily: resolveFontToast('$heading'),
+        color: resolveColorToast('$successBase'), fontWeight: '600',
       }}
       text2Style={{
-        fontSize: resolveSize('$xs'),
-        fontFamily: resolveFont('$body'),
-        color: resolveColor('$textPrimary'),
+        fontSize: resolveSizeToast('$xs'), fontFamily: resolveFontToast('$body'),
+        color: resolveColorToast('$textPrimary'),
       }}
     />
   ),
-
-  /** Error Toast */
   error: (props: BaseToastProps) => (
     <ErrorToast
       {...props}
       style={{
-          borderLeftColor: resolveColor('$errorBase'),
-          width: '90%',
-          marginTop: Platform.OS === 'ios' ? 50 : 20,
-          backgroundColor: resolveColor('$errorBg'),
-          borderRadius: resolveRadius('$md'),
-          borderWidth: 1,
-          borderColor: resolveColor('$errorBase'),
+          borderLeftColor: resolveColorToast('$errorBase'), width: '90%',
+          marginTop: Platform.OS === 'ios' ? 50 : 20, backgroundColor: resolveColorToast('$errorBg'),
+          borderRadius: resolveRadiusToast('$md'), borderWidth: 1, borderColor: resolveColorToast('$errorBase'),
        }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
       text1Style={{
-        fontSize: resolveSize('$sm'),
-        fontFamily: resolveFont('$heading'),
-        color: resolveColor('$errorBase'),
-        fontWeight: '600',
+        fontSize: resolveSizeToast('$sm'), fontFamily: resolveFontToast('$heading'),
+        color: resolveColorToast('$errorBase'), fontWeight: '600',
       }}
       text2Style={{
-        fontSize: resolveSize('$xs'),
-        fontFamily: resolveFont('$body'),
-        color: resolveColor('$textPrimary'),
+        fontSize: resolveSizeToast('$xs'), fontFamily: resolveFontToast('$body'),
+        color: resolveColorToast('$textPrimary'),
       }}
     />
   ),
-
-   /** Info Toast */
   info: (props: BaseToastProps) => (
      <InfoToast
       {...props}
       style={{
-          borderLeftColor: resolveColor('$infoBase'),
-          width: '90%',
-          marginTop: Platform.OS === 'ios' ? 50 : 20,
-          backgroundColor: resolveColor('$infoBg'),
-          borderRadius: resolveRadius('$md'),
-          borderWidth: 1,
-          borderColor: resolveColor('$infoBase'),
+          borderLeftColor: resolveColorToast('$infoBase'), width: '90%',
+          marginTop: Platform.OS === 'ios' ? 50 : 20, backgroundColor: resolveColorToast('$infoBg'),
+          borderRadius: resolveRadiusToast('$md'), borderWidth: 1, borderColor: resolveColorToast('$infoBase'),
       }}
       contentContainerStyle={{ paddingHorizontal: 15 }}
        text1Style={{
-        fontSize: resolveSize('$sm'),
-        fontFamily: resolveFont('$heading'),
-        color: resolveColor('$infoBase'),
-        fontWeight: '600',
+        fontSize: resolveSizeToast('$sm'), fontFamily: resolveFontToast('$heading'),
+        color: resolveColorToast('$infoBase'), fontWeight: '600',
       }}
       text2Style={{
-        fontSize: resolveSize('$xs'),
-        fontFamily: resolveFont('$body'),
-        color: resolveColor('$textPrimary'),
+        fontSize: resolveSizeToast('$xs'), fontFamily: resolveFontToast('$body'),
+        color: resolveColorToast('$textPrimary'),
       }}
     />
   ),

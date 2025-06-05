@@ -1,93 +1,98 @@
-import { useState, useEffect } from 'react';
- import {
-   differenceInSeconds,
-   isWithinInterval,
-   setHours,
-   setMinutes,
-   setSeconds,
-   formatDuration,
-   intervalToDuration,
-   isAfter,
- } from 'date-fns';
+﻿// src/hooks/useMarketTimer.ts
+import { useState, useEffect, useCallback } from 'react';
+import { formatDuration, intervalToDuration, differenceInSeconds, isAfter, parseISO } from 'date-fns';
+import { useProfileStore as useProfileStoreForMarketTimerHook } from '../features/profiles/store/profileStore'; // Aliased for clarity
 
- /**
-  * Custom hook to manage the Goblin Market timer (12 PM - 7 PM local time)
-  * and determine if the market is currently open.
-  * Addresses Story 75 and 81.
-  */
- export function useMarketTimer() {
-   const [marketOpenTime, setMarketOpenTime] = useState<Date | null>(null);
-   const [marketCloseTime, setMarketCloseTime] = useState<Date | null>(null);
-   const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
-   const [isMarketOpen, setIsMarketOpen] = useState<boolean>(false);
-   const [isMarketClosedPermanently, setIsMarketClosedPermanently] = useState<boolean>(false); // Tracks if market ended for the day
+export function useMarketTimer() {
+  // Reasoning: This hook centralizes the logic for fetching market status and calculating time left.
+  // It relies on profileStore to hold the fetched market status.
+  const { marketStatus, fetchMarketStatus, marketStatusFetchState, error: marketError } = useProfileStoreForMarketTimerHook(state => ({
+    marketStatus: state.marketStatus,
+    fetchMarketStatus: state.fetchMarketStatus,
+    marketStatusFetchState: state.marketStatusFetchState,
+    error: state.error, // Assuming profileStore.error might contain market fetch errors
+  }));
 
-   useEffect(() => {
-     // --- Calculate Today's Market Window ---
-     // This logic assumes the market runs daily from 12 PM to 7 PM local time for the demo.
-     // In a real app, start/end times would likely come from an API.
-     const now = new Date();
-     const todayMarketOpen = setSeconds(setMinutes(setHours(now, 12), 0), 0); // Today at 12:00:00 PM
-     const todayMarketClose = setSeconds(setMinutes(setHours(now, 19), 0), 0); // Today at 7:00:00 PM (19:00)
+  const [timeLeft, setTimeLeft] = useState<string>('--:--:--');
+  const [isMarketOpenLocal, setIsMarketOpenLocal] = useState<boolean>(false); // Local derived state
 
-     setMarketOpenTime(todayMarketOpen);
-     setMarketCloseTime(todayMarketClose);
+  // Fetch market status on mount and periodically.
+  // Reasoning: Keeps market status relatively up-to-date.
+  useEffect(() => {
+    fetchMarketStatus(); // Initial fetch
+    const intervalId = setInterval(fetchMarketStatus, 60000); // Refetch every minute
+    return () => clearInterval(intervalId); // Cleanup interval on unmount
+  }, [fetchMarketStatus]);
 
-     // --- Initial Market State Check ---
-     const currentlyOpen = isWithinInterval(now, { start: todayMarketOpen, end: todayMarketClose });
-     const alreadyEnded = isAfter(now, todayMarketClose);
-     setIsMarketOpen(currentlyOpen);
-     setIsMarketClosedPermanently(alreadyEnded); // If it's past 7 PM
+  // Update timer based on fetched market status from the store.
+  // Reasoning: Calculates and formats the countdown or "CLOSED" status.
+  useEffect(() => {
+    if (marketStatusFetchState === 'loading') {
+      // Display a loading state or keep previous time to avoid flicker.
+      // For Phase 1, keeping previous or '--:--:--' is acceptable.
+      // setTimeLeft("Loading..."); // Optional: Indicate loading
+      return;
+    }
 
-     if (alreadyEnded) {
-       setTimeLeft('00:00:00');
-     }
+    if (marketStatusFetchState === 'error' || !marketStatus) {
+      setIsMarketOpenLocal(false);
+      setTimeLeft("CLOSED"); // Or "Status N/A" or display an error indicator
+      console.warn("MarketTimer: Error fetching status or no status data.");
+      return;
+    }
 
-     // --- Timer Interval ---
-     // Only run the interval if the market hasn't already closed for the day
-     if (!alreadyEnded) {
-         const interval = setInterval(() => {
-             const currentTime = new Date();
-             const isOpenNow = isWithinInterval(currentTime, { start: todayMarketOpen, end: todayMarketClose });
-             setIsMarketOpen(isOpenNow);
+    setIsMarketOpenLocal(marketStatus.isMarketOpen);
+    const endTimeISO = marketStatus.endTime;
 
-             if (isOpenNow) {
-                 const secondsRemaining = differenceInSeconds(todayMarketClose, currentTime);
-                 if (secondsRemaining <= 0) {
-                     setTimeLeft('00:00:00');
-                     setIsMarketOpen(false);
-                     setIsMarketClosedPermanently(true); // Market ended
-                     clearInterval(interval);
-                 } else {
-                     const duration = intervalToDuration({ start: 0, end: secondsRemaining * 1000 });
-                     const formattedTime = formatDuration(duration, {
-                         format: ['hours', 'minutes', 'seconds'],
-                         zero: true,
-                         delimiter: ':',
-                         locale: { // Pad with zeros
-                             formatDistance: (_token, count) => String(count).padStart(2, '0'),
-                         },
-                     });
-                     setTimeLeft(formattedTime);
-                 }
-             } else {
-                 // If it's before 12 PM or after 7 PM (and timer somehow still running)
-                 setTimeLeft('--:--:--'); // Or "00:00:00" if past 7 PM
-                 if (isAfter(currentTime, todayMarketClose)) {
-                     setIsMarketClosedPermanently(true);
-                     clearInterval(interval); // Stop timer if market closed
-                 }
-             }
-         }, 1000);
+    if (!marketStatus.isMarketOpen || !endTimeISO) {
+      setTimeLeft("CLOSED");
+      setIsMarketOpenLocal(false);
+      return; // Market is not open or no end time provided.
+    }
 
-         // Cleanup interval on unmount or when market closes permanently
-         return () => clearInterval(interval);
-     }
+    const marketEndTimeDate = parseISO(endTimeISO);
+    if (isAfter(new Date(), marketEndTimeDate)) {
+      setTimeLeft("CLOSED");
+      setIsMarketOpenLocal(false);
+      return; // Market already ended for the day.
+    }
 
-   }, []); // Run only once on mount for this demo setup
+    // Market is open and end time is valid and in the future.
+    const timer = setInterval(() => {
+      const currentTime = new Date();
+      if (isAfter(currentTime, marketEndTimeDate)) {
+        setTimeLeft("CLOSED");
+        setIsMarketOpenLocal(false);
+        clearInterval(timer);
+        fetchMarketStatus(); // Re-fetch status as market just closed based on client timer
+      } else {
+        const secondsRemaining = differenceInSeconds(marketEndTimeDate, currentTime);
+        if (secondsRemaining <= 0) {
+          setTimeLeft("CLOSED");
+          setIsMarketOpenLocal(false);
+          clearInterval(timer);
+          fetchMarketStatus(); // Re-fetch status
+        } else {
+          const duration = intervalToDuration({ start: 0, end: secondsRemaining * 1000 });
+          const formattedTime = formatDuration(duration, {
+            format: ['hours', 'minutes', 'seconds'],
+            zero: true,
+            delimiter: ':',
+            locale: { formatDistance: (_token, count) => String(count).padStart(2, '0') },
+          });
+          setTimeLeft(formattedTime);
+          setIsMarketOpenLocal(true); // Ensure market is marked open
+        }
+      }
+    }, 1000);
 
-   // Return the formatted time left and the current market status
-   // Use isMarketClosedPermanently for the overlay (Story 81)
-   // Use isMarketOpen for enabling/disabling actions
-   return { timeLeft, isMarketOpen, isMarketClosedPermanently };
- }
+    return () => clearInterval(timer); // Cleanup interval on unmount or when dependencies change
+  }, [marketStatus, marketStatusFetchState, fetchMarketStatus]); // Added fetchMarketStatus to dependencies
+
+  return {
+    timeLeft,
+    isMarketOpen: isMarketOpenLocal,
+    isLoadingMarketStatus: marketStatusFetchState === 'loading',
+    marketStatusError: marketStatusFetchState === 'error' ? marketError : null,
+  };
+}

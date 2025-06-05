@@ -1,55 +1,62 @@
+﻿// src/components/IconButton.tsx
 import React from 'react';
-import { Pressable, PressableProps, StyleProp, ViewStyle } from 'react-native';
-// Import the Gluestack Icon component
-import { Icon } from '@gluestack-ui/themed';
-// Import the specific icon set component
+import { Pressable as RNPressable, PressableProps as RNPressableProps, StyleProp, ViewStyle } from 'react-native';
+import { Pressable as GluePressable, Icon as GlueIcon } from '@gluestack-ui/themed';
+import type { ComponentProps } from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 
-interface IconButtonProps extends PressableProps {
+type GlueIconPropsIconButton = ComponentProps<typeof GlueIcon>;
+type GluePressablePropsIconButton = ComponentProps<typeof GluePressable>;
+
+interface IconButtonProps extends Omit<GluePressablePropsIconButton, 'children' | 'style'> {
   iconName: string;
-  iconSize?: number;
-  iconColor?: string; // Theme color token (e.g., '$textPrimary') or hex code
+  iconSize?: GlueIconPropsIconButton['size']; // Use Gluestack's size tokens like 'sm', 'md', 'lg', 'xl'
+  iconColor?: string;
   'aria-label': string;
   style?: StyleProp<ViewStyle>;
 }
 
-/** Renders a button containing only an icon using Gluestack's Icon component. */
 const IconButton: React.FC<IconButtonProps> = ({
   iconName,
-  iconSize = 24,
-  iconColor: iconColorProp = '$iconColor', // Default theme token
+  iconSize = "xl",
+  iconColor: iconColorProp = '$iconColor',
   'aria-label': ariaLabel,
   style,
   disabled,
-  ...props
+  sx,
+  ...pressableProps
 }) => {
-  // Determine the color token based on the disabled state
-  const finalIconColorToken = disabled ? '$textSecondary' : iconColorProp;
+  const finalIconColorToken = disabled ? '$textDisabled' : iconColorProp;
 
   return (
-    <Pressable
+    <GluePressable
       accessibilityRole="button"
       accessibilityLabel={ariaLabel}
       accessibilityState={{ disabled: !!disabled }}
       disabled={disabled}
-      style={({ pressed }) => [
-        { padding: 8 }, // Add padding for touch target size
-        { opacity: disabled ? 0.5 : pressed ? 0.6 : 1 }, // Dim when disabled or pressed
-        style, // Allow custom styles
-      ]}
-      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }} // Increase touch area
-      {...props}
+      sx={{
+        padding: '$2',
+        opacity: disabled ? 0.5 : 1,
+        ':pressed': {
+          opacity: 0.6,
+        },
+        ...sx,
+      }}
+      style={style}
+      hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
+      {...pressableProps}
     >
-      {/* Use Gluestack Icon component */}
-      <Icon
-        as={MaterialCommunityIcons} // Pass the icon set component
-        // @ts-ignore - Pass name prop directly to the underlying component
+      <GlueIcon
+        as={MaterialCommunityIcons}
+        // @ts-ignore The 'name' prop is valid for MaterialCommunityIcons and will be passed through.
         name={iconName}
-        size="xl" // Use a valid Icon size token ('xl' corresponds to 24)
-        // Pass the theme token directly to the color prop
+        // The 'size' prop for GlueIcon expects specific tokens.
+        // MaterialCommunityIcons takes a number. Gluestack <Icon> should handle mapping.
+        // If direct number needed, use style prop on MaterialCommunityIcons directly.
+        size={iconSize}
         color={finalIconColorToken}
       />
-    </Pressable>
+    </GluePressable>
   );
 };
 export default IconButton;

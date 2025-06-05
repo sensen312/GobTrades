@@ -1,57 +1,73 @@
-// Defines core data structures matching backend MongoDB schema.
-
-// User profile structure.
+﻿// src/types/models.ts
 export interface UserProfile {
-    _id: string;
+  _id: string; 
+  uuid: string; 
+  goblinName: string;
+  pfpIdentifier: string; 
+  items: Item[]; 
+  offeredItemTags: string[]; 
+  wantsTags: string[]; 
+  offeredItemsDescription: string; 
+  wantedItemsDescription: string; 
+  likeCount: number; 
+  lastActive: string; 
+  createdAt: string; 
+  updatedAt: string; 
+}
+
+export interface Item { // This is ModelItem
+  localId: string; 
+  dbId?: string;    
+  itemName: string;
+  imageFilename: string;
+  createdAt?: string; 
+  updatedAt?: string; 
+  // Added missing properties to align with StallItemLocal and ImageObject usage
+  isNew?: boolean; 
+  name?: string; // For client-side picker name if different from itemName
+  uri?: string; // Display URI, especially for new local images
+  type?: string; // Mime type
+  originalFilename?: string; // Server filename for existing images
+}
+
+export interface Message {
+  _id: string; 
+  localId?: string; 
+  chatId: string; 
+  senderId: string; 
+  text?: string; 
+  createdAt: string; 
+  status?: 'sending' | 'sent' | 'failed'; 
+}
+
+export interface ChatPreview {
+  _id: string; 
+  otherParticipant: {
     uuid: string;
     goblinName: string;
     pfpIdentifier: string;
-    createdAt: string; // ISO 8601 Date string
-    likedListingIds?: string[]; // Optional array of liked listing IDs
+  };
+  lastMessagePreview?: string;
+  lastMessageAt: string; 
+  unreadCount: number;
 }
 
-// Listing item structure.
-export interface Listing {
-    _id: string;
-    userId: string;
-    goblinName: string;
-    itemName: string;
-    description: string;
-    imageFilenames: string[];
-    primaryImageFilename?: string;
-    tags: string[];
-    wantsTags: string[];
-    isActive: boolean; // Represents traded status (true = available)
-    isDeleted?: boolean; // Optional for soft delete
-    likeCount: number; // Number of likes
-    createdAt: string; // ISO 8601 Date string
-    updatedAt: string; // ISO 8601 Date string
+export interface TradeRequest { // This is ModelTradeRequest
+  _id: string;
+  senderUuid: string;
+  senderGoblinName: string;
+  senderPfpIdentifier: string;
+  recipientUuid: string;
+  status: 'pending' | 'accepted' | 'declined';
+  createdAt: string;
 }
 
-// Chat preview structure for the messages list.
-export interface ChatPreview {
-    _id: string; // Chat ID
-    participantIds: string[];
-    // Details of the *other* participant in the chat.
-    otherParticipant: { _id: string; goblinName: string; pfpIdentifier: string; };
-    lastMessagePreview?: string; // Snippet of the last message
-    lastMessageAt: string; // ISO 8601 Date string
-    associatedListingId: string; // Listing context for the chat
-    unreadCount: number; // Unread messages for the current user
+export interface ImageObject { // This is AppImageObject
+  uri: string;
+  type?: string;
+  name?: string; // This is often the client-derived filename for new images
+  localId: string;
+  isNew: boolean;
+  originalFilename?: string;
+  dbId?: string;
 }
-
-// Individual message structure.
-export interface Message {
-    _id: string; // Message ID
-    chatId: string;
-    senderId: string; // User ID of the sender
-    text?: string;
-    imageFilename?: string;
-    isOffer?: boolean; // Indicates if this message is a formal item offer
-    offeredListingId?: string; // ID of the offered listing if isOffer is true
-    createdAt: string; // ISO 8601 Date string
-    // Client-side status for UI feedback (optional)
-    status?: 'sending' | 'sent' | 'failed';
-    localId?: string; // Temporary client-side ID
-}
-

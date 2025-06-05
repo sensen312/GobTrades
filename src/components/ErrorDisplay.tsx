@@ -1,6 +1,13 @@
+﻿// src/components/ErrorDisplay.tsx
 import React from 'react';
-import { Box, Icon, AlertCircleIcon } from '@gluestack-ui/themed';
-import ThemedText from './ThemedText';
+import { Box, Icon as GlueIconError, AlertCircleIcon } from '@gluestack-ui/themed'; // Aliased Icon
+import ThemedText from './ThemedText'; // Already defined above
+import type { ComponentProps } from 'react';
+
+// Gluestack UI Prop Typing
+type BoxPropsError = ComponentProps<typeof Box>;
+type GlueIconPropsError = ComponentProps<typeof GlueIconError>;
+
 
 interface ErrorDisplayProps {
   message: string | null | undefined;
@@ -9,21 +16,22 @@ interface ErrorDisplayProps {
 
 /** Displays themed error message box with icon. */
 const ErrorDisplay: React.FC<ErrorDisplayProps> = ({ message, title = "Oops! A Gremlin!" }) => {
-  if (!message) return null;
+  if (!message) return null; // Don't render if no message
 
   return (
     <Box
-        bg="$errorBg"
+        bg="$errorBg" // Use theme token for error background
         p="$3"
         borderRadius="$md"
         borderWidth={1}
-        borderColor="$errorBase"
+        borderColor="$errorBase" // Use theme token for error border
         flexDirection="row"
         alignItems="center"
-        gap="$2"
-        my="$2"
+        gap="$2" // Use theme token for gap if available, otherwise direct value
+        my="$2" // Margin for spacing
+        testID="error-display-box"
     >
-      <Icon as={AlertCircleIcon} color="$errorBase" size="md" />
+      <GlueIconError as={AlertCircleIcon} color="$errorBase" size="md" />
       <Box flex={1}>
         <ThemedText bold color="$errorBase" fontSize="$sm">{title}</ThemedText>
         <ThemedText color="$errorBase" fontSize="$sm">{message}</ThemedText>

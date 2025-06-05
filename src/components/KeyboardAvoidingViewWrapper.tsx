@@ -1,3 +1,4 @@
+﻿// src/components/KeyboardAvoidingViewWrapper.tsx
 import React from 'react';
 import { KeyboardAvoidingView, Platform, ScrollView, ViewProps, ScrollViewProps, StyleSheet } from 'react-native';
 
@@ -13,17 +14,19 @@ const KeyboardAvoidingViewWrapper: React.FC<KeyboardAvoidingViewWrapperProps> = 
     children,
     style,
     scrollViewProps,
-    keyboardVerticalOffset = Platform.OS === 'ios' ? 60 : 0 // Default offset
+    keyboardVerticalOffset = Platform.OS === 'ios' ? 90 : 0 // Adjusted for typical header height
 }) => {
+    // Reasoning: Addresses common keyboard overlap issues in React Native forms,
+    // ensuring input fields remain visible and accessible when the keyboard is active.
     return (
         <KeyboardAvoidingView
-            style={[styles.container, style]}
+            style={[stylesKAVWrapper.container, style]} // Renamed styles object
             behavior={Platform.OS === "ios" ? "padding" : "height"}
             keyboardVerticalOffset={keyboardVerticalOffset}
         >
             <ScrollView
-                keyboardShouldPersistTaps="handled"
-                contentContainerStyle={styles.scrollContent}
+                keyboardShouldPersistTaps="handled" // Ensures taps outside input dismiss keyboard
+                contentContainerStyle={stylesKAVWrapper.scrollContent}
                 showsVerticalScrollIndicator={false}
                 {...scrollViewProps}
             >
@@ -33,7 +36,7 @@ const KeyboardAvoidingViewWrapper: React.FC<KeyboardAvoidingViewWrapperProps> = 
     );
 };
 
-const styles = StyleSheet.create({
+const stylesKAVWrapper = StyleSheet.create({ // Renamed styles object
     container: {
         flex: 1,
     },

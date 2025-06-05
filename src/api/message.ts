@@ -1,33 +1,37 @@
+﻿// src/api/message.ts
 import apiClient from './index';
 import {
-    ChatPreview, Message, FetchChatsResponse, FetchMessagesParams,
-    FetchMessagesResponse, InitiateChatRequest, InitiateChatResponse,
-    UploadChatImageResponse
-} from '../types'; // Ensure types are imported
+  FetchChatsAndRequestsResponseDto,
+  FetchMessagesParamsDto,
+  FetchMessagesResponseDto,
+} from '../types';
 
-/** Fetches user's chat list previews (user identified by X-User-UUID header). */
-export const fetchChatsApi = async (): Promise<FetchChatsResponse> => {
-    const response = await apiClient.get<FetchChatsResponse>('/messages/chats');
-    return response.data; // Expects ChatPreview[]
+/**
+ * Fetches chat previews and pending trade requests.
+ * Stub for Phase 1, will return empty arrays.
+ * Reasoning: Placeholder for future messaging list functionality.
+ * @returns A promise resolving to an object containing empty arrays for chats and trade requests.
+ */
+export const fetchChatsAndRequestsApi = async (): Promise<FetchChatsAndRequestsResponseDto> => {
+  console.log('API CALL: GET /messages/chats-and-requests (Phase 1 Stub)');
+  // For Phase 1, this endpoint might not be fully implemented or might return empty data.
+  // Simulating an empty response as per the plan.
+  return Promise.resolve({ chats: [], tradeRequests: [] });
 };
 
-/** Fetches message history for a specific chat. */
-export const fetchMessagesForChatApi = async (chatId: string, params?: FetchMessagesParams): Promise<FetchMessagesResponse> => {
-    const response = await apiClient.get<FetchMessagesResponse>(`/messages/chats/${chatId}/messages`, { params });
-    return response.data; // Expects PaginatedResponse<Message>
-};
-
-/** Initiates/retrieves chat for a listing/user (initiator identified by X-User-UUID header). */
-export const initiateChatApi = async (requestData: InitiateChatRequest): Promise<InitiateChatResponse> => {
-    const response = await apiClient.post<InitiateChatResponse>('/messages/chats/initiate', requestData);
-    return response.data; // Expects { chatId: string, initialMessage?: Message }
-};
-
-/** Uploads image for chat message (sends FormData). */
-export const uploadChatMessageImageApi = async (imageData: FormData): Promise<UploadChatImageResponse> => {
-    // Expects FormData with key like 'imageFile' (confirm with backend)
-    const response = await apiClient.post<UploadChatImageResponse>('/messages/images', imageData, {
-        headers: { 'Content-Type': 'multipart/form-data' },
-    });
-    return response.data; // Expects { imageFilename: string }
+/**
+ * Fetches messages for a specific chat.
+ * Stub for Phase 1, will return an empty paginated response.
+ * Reasoning: Placeholder for future chat history functionality.
+ * @param chatId - The ID of the chat.
+ * @param params - Pagination parameters.
+ * @returns A promise resolving to an empty paginated message response.
+ */
+export const fetchMessagesForChatApi = async (
+  chatId: string,
+  params?: FetchMessagesParamsDto
+): Promise<FetchMessagesResponseDto> => {
+  console.log(`API CALL: GET /messages/chats/${chatId}/messages (Phase 1 Stub)`, params);
+  // Simulating an empty response as per the plan.
+  return Promise.resolve({ items: [], hasMore: false, currentPage: params?.page || 1, totalItems: 0, totalPages: 0 });
 };
