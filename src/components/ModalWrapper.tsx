@@ -3,7 +3,7 @@ import React from 'react';
 import {
     Modal, ModalBackdrop, ModalContent, ModalHeader, ModalBody, ModalFooter
 } from '@gluestack-ui/themed';
-import type { IModalProps as GlueModalProps } from '@gluestack-ui/themed'; // Correct type import
+import type { ModalProps as GlueModalProps } from '@gluestack-ui/themed'; // Correct type import
 // import type { ComponentProps } from 'react'; // Not strictly needed here if not using ComponentProps directly
 
 interface ModalWrapperProps extends Omit<GlueModalProps, 'children'> {

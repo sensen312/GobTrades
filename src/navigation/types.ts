@@ -1,6 +1,6 @@
 ﻿// src/navigation/types.ts
 import type { NativeStackScreenProps, NativeStackNavigationProp } from '@react-navigation/native-stack';
-import type { BottomTabScreenProps, BottomTabNavigationProp } from '@react-navigation/bottom-tabs';
+import type { BottomTabScreenProps } from '@react-navigation/bottom-tabs';
 import type { NavigatorScreenParams, CompositeScreenProps, RouteProp } from '@react-navigation/native';
 
 export type AuthStackParamList = {
@@ -21,9 +21,8 @@ export type MessagesStackParamList = {
     targetUserUuid: string;
     targetUserName?: string;
     targetUserPfpIdentifier?: string;
-    contextItemId?: string;
+    listingId?: string;
   };
-  ProfileDetailScreen: { userUuid: string };
 };
 
 export type MainTabsParamList = {
@@ -38,11 +37,10 @@ export type AppStackParamList = {
   Settings: undefined;
 };
 
-export type AppScreenProps<T extends keyof AppStackParamList> = NativeStackScreenProps<AppStackParamList, T>;
-export type AuthScreenProps<T extends keyof AuthStackParamList> = CompositeScreenProps<NativeStackScreenProps<AuthStackParamList, T>, AppScreenProps<keyof AppStackParamList>>;
-export type MainTabsScreenProps<T extends keyof MainTabsParamList> = CompositeScreenProps<BottomTabScreenProps<MainTabsParamList, T>, AppScreenProps<keyof AppStackParamList>>;
-export type MessagesScreenNavigationProp<T extends keyof MessagesStackParamList> = CompositeScreenProps<NativeStackScreenProps<MessagesStackParamList, T>, MainTabsScreenProps<keyof MainTabsParamList>>['navigation'];
-export type MessagesScreenRouteProp<T extends keyof MessagesStackParamList> = CompositeScreenProps<NativeStackScreenProps<MessagesStackParamList, T>, MainTabsScreenProps<keyof MainTabsParamList>>['route'];
+// Generic Screen Props
+export type AuthScreenProps<T extends keyof AuthStackParamList> = NativeStackScreenProps<AuthStackParamList, T>;
+export type MessagesScreenProps<T extends keyof MessagesStackParamList> = CompositeScreenProps<NativeStackScreenProps<MessagesStackParamList, T>, BottomTabScreenProps<MainTabsParamList>>;
+export type MessagesScreenNavigationProp<T extends keyof MessagesStackParamList> = MessagesScreenProps<T>['navigation'];
+export type MessagesScreenRouteProp<T extends keyof MessagesStackParamList> = MessagesScreenProps<T>['route'];
 
-// Correcting route prop for MyStallScreen
 export type MyStallScreenRouteProp = RouteProp<MainTabsParamList, 'MyStall'>;
