@@ -13,7 +13,7 @@ using System.Reflection;
 [assembly: System.Reflection.AssemblyCompanyAttribute("GobTrades.Backend")]
 [assembly: System.Reflection.AssemblyConfigurationAttribute("Debug")]
 [assembly: System.Reflection.AssemblyFileVersionAttribute("1.0.0.0")]
-[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+6356a007f856ab02e15b21320c1381b89a01fa3c")]
+[assembly: System.Reflection.AssemblyInformationalVersionAttribute("1.0.0+0902bf02abfc438c6522e4f76177ca1bf387191f")]
 [assembly: System.Reflection.AssemblyProductAttribute("GobTrades.Backend")]
 [assembly: System.Reflection.AssemblyTitleAttribute("GobTrades.Backend")]
 [assembly: System.Reflection.AssemblyVersionAttribute("1.0.0.0")]

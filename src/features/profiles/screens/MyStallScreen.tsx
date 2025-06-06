@@ -7,8 +7,10 @@ import { zodResolver } from '@hookform/resolvers/zod';
 import * as z from 'zod';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import uuid from 'react-native-uuid';
+import { Alert } from 'react-native'; // Ensure FlatList is imported from react-native
+import {FlatList} from 'react-native-gesture-handler';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import { Alert, FlatList } from 'react-native';
+
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
 
 import ScreenContainer from '../../../components/ScreenContainer';
@@ -68,7 +70,7 @@ const MyStallScreen: React.FC = () => {
   const [localItems, setLocalItems] = useState<StallItemLocal[]>([]);
   const [itemToRemove, setItemToRemove] = useState<StallItemLocal | null>(null);
   const [isRemoveConfirmVisible, setIsRemoveConfirmVisible] = useState(false);
-  const draggableFlatListRef = useRef<DraggableFlatList<StallItemLocal>>(null);
+  const draggableFlatListRef = useRef<FlatList<StallItemLocal>>(null);
   const maxImages = 10;
 
   const { control, handleSubmit, reset: resetForm, formState: { errors, isDirty: formIsDirty, isValid: formIsValid }, watch } = useForm<StallFormData>({
