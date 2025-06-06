@@ -1,6 +1,8 @@
+﻿// src/components/Card.tsx
 import React from 'react';
-import { Box, Platform } from '@gluestack-ui/themed';
+import { Box } from '@gluestack-ui/themed';
 import type { ComponentProps } from 'react';
+import { Platform } from 'react-native'; // Correct import source
 
 type BoxProps = ComponentProps<typeof Box>;
 
@@ -8,7 +10,6 @@ interface CardProps extends BoxProps {
     children: React.ReactNode;
 }
 
-/** Renders a styled container using Box, accepting BoxProps for customization. */
 const Card: React.FC<CardProps> = ({
     children,
     bg = "$backgroundCard",
@@ -21,10 +22,9 @@ const Card: React.FC<CardProps> = ({
     shadowOffset = { width: 0, height: 2 },
     shadowOpacity = 0.1,
     shadowRadius = 3,
-    sx, // Capture sx prop
-    ...props // Spread rest of BoxProps
+    sx,
+    ...props
 }) => {
-    // Combine passed sx with elevation style for Android
     const combinedSx = {
         ...sx,
          ...(Platform.OS === 'android' && { elevation: 2 }),
@@ -42,7 +42,7 @@ const Card: React.FC<CardProps> = ({
             shadowOffset={shadowOffset}
             shadowOpacity={shadowOpacity}
             shadowRadius={shadowRadius}
-            sx={combinedSx} // Apply combined sx prop
+            sx={combinedSx}
             {...props}
         >
             {children}

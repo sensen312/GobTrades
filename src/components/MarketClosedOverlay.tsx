@@ -1,18 +1,10 @@
 ﻿// src/components/MarketClosedOverlay.tsx
 import React from 'react';
-import { Box, Heading, VStack, Icon as GlueIcon } from '@gluestack-ui/themed';
-import type { ComponentProps } from 'react';
+import { Box, Heading, VStack, Icon } from '@gluestack-ui/themed';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import ThemedText from './ThemedText';
 
-// Gluestack UI Prop Typing
-type BoxPropsOverlay = ComponentProps<typeof Box>;
-type HeadingPropsOverlay = ComponentProps<typeof Heading>;
-type GlueIconPropsOverlay = ComponentProps<typeof GlueIcon>;
-
-interface MarketClosedOverlayProps {}
-
-const MarketClosedOverlay: React.FC<MarketClosedOverlayProps> = () => {
+const MarketClosedOverlay: React.FC = () => {
   return (
     <Box
       position="absolute"
@@ -25,11 +17,11 @@ const MarketClosedOverlay: React.FC<MarketClosedOverlayProps> = () => {
       testID="market-closed-overlay"
     >
       <VStack space="lg" alignItems="center">
-        <GlueIcon
+        <Icon
           as={MaterialCommunityIcons}
-          // @ts-ignore The 'name' prop is valid for MaterialCommunityIcons
+          // @ts-ignore The 'name' prop is valid for MaterialCommunityIcons at runtime.
           name="door-closed-lock"
-          size="2xl"
+          size="xl"
           color="$parchment300"
           mb="$2"
         />
@@ -43,5 +35,4 @@ const MarketClosedOverlay: React.FC<MarketClosedOverlayProps> = () => {
     </Box>
   );
 };
-
 export default MarketClosedOverlay;

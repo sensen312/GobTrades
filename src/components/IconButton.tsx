@@ -1,16 +1,16 @@
 ﻿// src/components/IconButton.tsx
 import React from 'react';
-import { Pressable as RNPressable, PressableProps as RNPressableProps, StyleProp, ViewStyle } from 'react-native';
 import { Pressable as GluePressable, Icon as GlueIcon } from '@gluestack-ui/themed';
-import type { ComponentProps } from 'react';
+import type { ComponentProps, ISizes } from '@gluestack-ui/themed';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+import { StyleProp, ViewStyle } from 'react-native';
 
 type GlueIconPropsIconButton = ComponentProps<typeof GlueIcon>;
 type GluePressablePropsIconButton = ComponentProps<typeof GluePressable>;
 
 interface IconButtonProps extends Omit<GluePressablePropsIconButton, 'children' | 'style'> {
   iconName: string;
-  iconSize?: GlueIconPropsIconButton['size']; // Use Gluestack's size tokens like 'sm', 'md', 'lg', 'xl'
+  iconSize?: ISizes['Icon'];
   iconColor?: string;
   'aria-label': string;
   style?: StyleProp<ViewStyle>;
@@ -48,11 +48,8 @@ const IconButton: React.FC<IconButtonProps> = ({
     >
       <GlueIcon
         as={MaterialCommunityIcons}
-        // @ts-ignore The 'name' prop is valid for MaterialCommunityIcons and will be passed through.
+        // @ts-ignore The 'name' prop is valid for MaterialCommunityIcons at runtime.
         name={iconName}
-        // The 'size' prop for GlueIcon expects specific tokens.
-        // MaterialCommunityIcons takes a number. Gluestack <Icon> should handle mapping.
-        // If direct number needed, use style prop on MaterialCommunityIcons directly.
         size={iconSize}
         color={finalIconColorToken}
       />

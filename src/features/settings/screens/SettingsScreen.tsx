@@ -1,52 +1,41 @@
 ﻿// src/features/settings/screens/SettingsScreen.tsx
 import React from 'react';
 import { Box, Heading, VStack, ScrollView, Divider, Pressable } from '@gluestack-ui/themed';
-// import type { ComponentProps } from 'react'; // Not needed if not spreading
 import { Linking, Alert } from 'react-native';
+import ScreenContainer from '../../../components/ScreenContainer';
 import ThemedText from '../../../components/ThemedText';
-import { useAuthStore as useAuthStoreSettings } from '../../auth/store/authStore';
-import { AppScreenProps, AppStackParamList } from '../../../navigation/types'; // Ensure AppStackParamList is imported
 import UserPfpDisplay from '../../../components/UserPfpDisplay';
 import PrimaryButton from '../../../components/PrimaryButton';
-import LoadingIndicator from '../../../components/LoadingIndicator'; // For Retire Goblin loading
-import { NativeStackScreenProps } from '@react-navigation/native-stack'; // Import for specific screen props
+import { useAuthStore } from '../../auth/store/authStore';
+import { NativeStackScreenProps } from '@react-navigation/native-stack';
+import { AppStackParamList } from '../../../navigation/types';
 
+type PropsSettings = NativeStackScreenProps<AppStackParamList, 'Settings'>;
 
-type PropsSettings = NativeStackScreenProps<AppStackParamList, 'Settings'>; // Correct typing for Settings screen
-
-const SettingsScreen: React.FC<PropsSettings> = ({ navigation }) => { // navigation is now correctly typed
-    // Reasoning: Provides a basic settings interface for Phase 1.
-    // Includes user info display, link to OS permissions, FAQ, and a "Retire Goblin"
-    // (logout/clear local data & request backend deletion) function.
-    const { goblinName, pfpIdentifier, clearAuthentication, uuid, isLoading: authIsLoading } = useAuthStoreSettings();
+const SettingsScreen: React.FC<PropsSettings> = ({ navigation }) => {
+    const { goblinName, pfpIdentifier, clearProfileAndData, uuid, isLoading: authIsLoading } = useAuthStore();
 
     const openAppSettings = () => {
-        // Reasoning: Allows users to manage app-specific OS permissions.
-        Linking.openSettings();
+        Linking.openSettings().catch(err => console.warn("Failed to open settings:", err));
     };
 
     const handleClearProfile = () => {
-        // Reasoning: Provides a way for users to reset their app data and start over.
-        // Includes a confirmation dialog to prevent accidental data loss.
         Alert.alert(
-            "Retire Goblin & Empty Stall?",
-            "This will log you out, attempt to delete your data from the server, and clear local data. Are you sure? This action cannot be undone.",
+            "Retire Goblin?",
+            "This will permanently delete your stall, goblin identity, and all associated data from this device. Are you sure, brave trader?",
             [
-                { text: "Cancel", style: "cancel" },
+                { text: "Nevermind", style: "cancel" },
                 {
-                    text: "Retire Goblin",
+                    text: "Retire & Empty Stall",
                     style: "destructive",
                     onPress: async () => {
-                        await clearAuthentication(); // This now handles backend deletion attempt
-                        // Navigation to Auth flow is handled by AppNavigator observing isAuthenticated state.
-                        console.log("SettingsScreen: Profile clear and backend deletion requested. User should be navigated to Auth flow.");
+                        await clearProfileAndData();
                     }
                 }
             ]
         );
     };
 
-    // Reasoning: FAQ items provide helpful information to the user.
     const faqItems = [
         { q: "What is GobTrades?", a: "A temporary marketplace for trading treasures during the Goblin Market event." },
         { q: "How long is the market open?", a: "The market is typically open for 8 hours during specific event dates. Check the timer in the header!" },
@@ -55,54 +44,47 @@ const SettingsScreen: React.FC<PropsSettings> = ({ navigation }) => { // navigat
     ];
 
     return (
-        // ScreenContainer is not used here as SettingsScreen is a stack screen with its own header.
-        // ScrollView ensures content is scrollable if it exceeds screen height.
-        <ScrollView contentContainerStyle={{ paddingBottom: 20 }} showsVerticalScrollIndicator={false}>
-            <VStack p="$4" space="lg">
-                {/* Profile Section */}
+        <ScreenContainer scrollable={true}>
+            <VStack p="$4" space="lg" pb="$20">
                 <Box alignItems="center" testID="settings-profile-section">
                     <UserPfpDisplay pfpIdentifier={pfpIdentifier} userName={goblinName || undefined} size="xl" />
-                    <Heading mt="$2" fontFamily="$heading">{goblinName || 'Goblin Trader'}</Heading>
-                    <ThemedText size="xs" color="$textSecondary" fontFamily="$body">
-                        UUID: {uuid ? `${uuid.substring(0, 8)}...` : 'N/A'}
-                    </ThemedText>
+                    <Heading mt="$2" size="xl">{goblinName || 'A Mysterious Goblin'}</Heading>
+                    {uuid && <ThemedText size="xs" color="$textSecondary" selectable={true}>Trader ID: {uuid}</ThemedText>}
                 </Box>
 
-                <Divider my="$3" />
+                <Divider />
 
-                {/* Permissions Section */}
-                <Heading size="md" fontFamily="$heading">Permissions</Heading>
-                <Pressable onPress={openAppSettings} accessibilityRole="button" testID="manage-permissions-link">
-                    <ThemedText color="$textLink" fontFamily="$body" textDecorationLine="underline">
-                        Manage Camera & Photo Permissions
-                    </ThemedText>
+                <Heading size="md">App Permissions</Heading>
+                <Pressable onPress={openAppSettings} accessibilityRole="button">
+                    <ThemedText color="$primary500">Manage Camera & Photo Permissions</ThemedText>
                 </Pressable>
+                <ThemedText size='xs' color='$textSecondary'>Used for adding images to your stall.</ThemedText>
 
-                <Divider my="$3" />
+                <Divider />
 
-                {/* FAQ Section */}
-                <Heading size="md" fontFamily="$heading">FAQ</Heading>
+                <Heading size="md">FAQ - Goblin Market Guide</Heading>
                 {faqItems.map((item, index) => (
                     <Box key={index} mb="$3">
-                        <ThemedText bold fontFamily="$body">{item.q}</ThemedText>
-                        <ThemedText fontFamily="$body">{item.a}</ThemedText>
+                        <ThemedText bold>{item.q}</ThemedText>
+                        <ThemedText size='sm'>{item.a}</ThemedText>
                     </Box>
                 ))}
 
-                 <Divider my="$3" />
+                <Divider />
 
-                 {/* Logout/Clear Profile */}
-                 <PrimaryButton
+                <PrimaryButton
                     title="Retire Goblin & Empty Stall"
                     onPress={handleClearProfile}
-                    isLoading={authIsLoading} // Show loading state from authStore
-                    disabled={authIsLoading}
-                    action="negative" // Uses themed 'negative' style
+                    action="negative"
                     mt="$4"
-                    testID="retire-goblin-button"
-                 />
+                    isLoading={authIsLoading}
+                    disabled={authIsLoading}
+                />
+                <ThemedText size="xs" color="$textSecondary" textAlign="center" mt="$2">
+                    This action is permanent and cannot be undone.
+                </ThemedText>
             </VStack>
-        </ScrollView>
+        </ScreenContainer>
     );
 };
 export default SettingsScreen;

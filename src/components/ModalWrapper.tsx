@@ -3,10 +3,9 @@ import React from 'react';
 import {
     Modal, ModalBackdrop, ModalContent, ModalHeader, ModalBody, ModalFooter
 } from '@gluestack-ui/themed';
-import type { ModalProps as GlueModalProps } from '@gluestack-ui/themed'; // Correct type import
-// import type { ComponentProps } from 'react'; // Not strictly needed here if not using ComponentProps directly
+import type { IModalProps } from '@gluestack-ui/themed';
 
-interface ModalWrapperProps extends Omit<GlueModalProps, 'children'> {
+interface ModalWrapperProps extends Omit<IModalProps, 'children'> {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;
@@ -17,8 +16,6 @@ interface ModalSubComponentProps {
     children: React.ReactNode;
 }
 
-// Main Modal Wrapper Component using compound pattern.
-// Reasoning: Simplifies modal creation by providing a standard layout structure.
 const ModalWrapper: React.FC<ModalWrapperProps> & {
     Header: React.FC<ModalSubComponentProps>;
     Body: React.FC<ModalSubComponentProps>;
@@ -41,24 +38,12 @@ const ModalWrapper: React.FC<ModalWrapperProps> & {
   );
 };
 
-// Header Sub-component.
-const HeaderMW: React.FC<ModalSubComponentProps> = ({ children }) => ( // Renamed locally
-    <ModalHeader>{children}</ModalHeader>
-);
+const Header: React.FC<ModalSubComponentProps> = ({ children }) => <ModalHeader>{children}</ModalHeader>;
+const Body: React.FC<ModalSubComponentProps> = ({ children }) => <ModalBody>{children}</ModalBody>;
+const Footer: React.FC<ModalSubComponentProps> = ({ children }) => <ModalFooter>{children}</ModalFooter>;
 
-// Body Sub-component.
-const BodyMW: React.FC<ModalSubComponentProps> = ({ children }) => ( // Renamed locally
-    <ModalBody>{children}</ModalBody>
-);
-
-// Footer Sub-component.
-const FooterMW: React.FC<ModalSubComponentProps> = ({ children }) => ( // Renamed locally
-    <ModalFooter>{children}</ModalFooter>
-);
-
-// Assign sub-components.
-ModalWrapper.Header = HeaderMW;
-ModalWrapper.Body = BodyMW;
-ModalWrapper.Footer = FooterMW;
+ModalWrapper.Header = Header;
+ModalWrapper.Body = Body;
+ModalWrapper.Footer = Footer;
 
 export default ModalWrapper;
