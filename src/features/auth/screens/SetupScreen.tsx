@@ -45,7 +45,7 @@ const SetupScreen: React.FC = () => {
                           </Input>
                           <IconButton
                               iconName="dice-5-outline"
-                              iconSize="xl"
+                              iconSize={32}
                               iconColor="$goblinGold600"
                               onPress={regenerateName}
                               aria-label="Regenerate name"

@@ -2,9 +2,8 @@
 import React from 'react';
 import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
-import { useTheme, Icon } from '@gluestack-ui/themed';
+import { useTheme } from '@gluestack-ui/themed';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
-
 import { MainTabsParamList } from './types';
 import AppHeader from '../components/AppHeader';
 import ProfileFeedNavigator from './ProfileFeedNavigator';
@@ -33,7 +32,9 @@ const MainNavigator: React.FC = () => {
         component={ProfileFeedNavigator}
         options={{
           tabBarLabel: 'Trades',
-          tabBarIcon: ({ color, size }) => <Icon as={MaterialCommunityIcons} name="storefront-outline" color={color} size="xl" />,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="storefront-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tab.Screen
@@ -42,7 +43,9 @@ const MainNavigator: React.FC = () => {
         initialParams={{ isFirstSetup: false }}
         options={{
           tabBarLabel: 'My Stall',
-          tabBarIcon: ({ color, size }) => <Icon as={MaterialCommunityIcons} name="treasure-chest-outline" color={color} size="xl" />,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="treasure-chest-outline" color={color} size={size} />
+          ),
         }}
       />
       <Tab.Screen
@@ -50,7 +53,9 @@ const MainNavigator: React.FC = () => {
         component={MessagesNavigator}
         options={{
           tabBarLabel: 'Messages',
-          tabBarIcon: ({ color, size }) => <Icon as={MaterialCommunityIcons} name="message-text-outline" color={color} size="xl" />,
+          tabBarIcon: ({ color, size }) => (
+            <MaterialCommunityIcons name="message-text-outline" color={color} size={size} />
+          ),
           tabBarBadge: totalUnreadCount > 0 ? totalUnreadCount : undefined,
         }}
       />

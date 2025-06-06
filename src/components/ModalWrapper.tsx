@@ -3,9 +3,10 @@ import React from 'react';
 import {
     Modal, ModalBackdrop, ModalContent, ModalHeader, ModalBody, ModalFooter
 } from '@gluestack-ui/themed';
-import type { IModalProps } from '@gluestack-ui/themed';
+import type { ComponentProps } from 'react';
 
-interface ModalWrapperProps extends Omit<IModalProps, 'children'> {
+// CORRECTED: Use ComponentProps to get the correct props type for the Modal component
+interface ModalWrapperProps extends Omit<ComponentProps<typeof Modal>, 'children'> {
   isOpen: boolean;
   onClose: () => void;
   children: React.ReactNode;

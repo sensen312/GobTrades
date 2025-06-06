@@ -1,6 +1,6 @@
 ﻿// src/features/profiles/screens/MyStallScreen.tsx
 import React, { useState, useEffect, useCallback, useRef } from 'react';
-import { Box, Heading, VStack, Input as GlueInput, HStack, Icon as GlueStackIcon, Pressable, Image as GlueImage } from '@gluestack-ui/themed'; // Added GlueImage
+import { Box, Heading, VStack, Input as GlueInput, HStack, Pressable, Image as GlueImage } from '@gluestack-ui/themed';
 import type { ComponentProps } from 'react';
 import { useForm, Controller, SubmitHandler } from 'react-hook-form';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -8,9 +8,8 @@ import * as z from 'zod';
 import { useNavigation, useRoute, useFocusEffect } from '@react-navigation/native';
 import uuid from 'react-native-uuid';
 import DraggableFlatList, { RenderItemParams, ScaleDecorator } from 'react-native-draggable-flatlist';
-import { Alert } from 'react-native';
+import { Alert, FlatList } from 'react-native';
 import { NativeStackNavigationProp } from '@react-navigation/native-stack';
-
 
 import ScreenContainer from '../../../components/ScreenContainer';
 import PrimaryButton from '../../../components/PrimaryButton';
@@ -21,19 +20,21 @@ import LoadingIndicator from '../../../components/LoadingIndicator';
 import ErrorDisplay from '../../../components/ErrorDisplay';
 import ConfirmationPrompt from '../../../components/ConfirmationPrompt';
 import ThemedText from '../../../components/ThemedText';
-import ImagePickerInput from '../../../components/ImagePickerInput';
+import ImagePickerInput, { ImagePickerObjectType } from '../../../components/ImagePickerInput';
 import StyledTextarea from '../../../components/StyledTextarea';
 import StyledMultiSelect from '../../../components/StyledMultiSelect';
-import { useAuthStore as useAuthStoreMyStall } from '../../auth/store/authStore';
-import { useProfileStore as useProfileStoreMyStall } from '../store/profileStore';
-import { useMarketTimer as useMarketTimerMyStall } from '../../../hooks/useMarketTimer';
-import { MyStallScreenRouteProp, AppStackParamList } from '../../../navigation/types';
+import EmptyState from '../../../components/EmptyState';
+import { useAuthStore } from '../../auth/store/authStore';
+import { useProfileStore } from '../store/profileStore';
+import { useMarketTimer } from '../../../hooks/useMarketTimer';
+import { AppStackParamList } from '../../../navigation/types';
 import { ITEM_TAGS, WANTS_TAGS } from '../../../constants/tags';
-import { ImageObject as AppImageObject, Item as ModelItemFromTypes, UserProfile as ModelUserProfileFromTypes } from '../../../types'; // Renamed to avoid conflict
+import { ImageObject as AppImageObject, Item as ModelItemFromTypes, UserProfile as ModelUserProfileFromTypes, UpdateProfileRequestDto } from '../../../types';
 import { showErrorToast } from '../../../utils/toast';
 import { IMAGE_API_PATH } from '../../../api';
 
 type GlueInputPropsMyStall = ComponentProps<typeof GlueInput>;
+type MyStallScreenRouteProp = any;
 
 const stallSchema = z.object({
   offeredItemsDescription: z.string().min(1, 'Offered items description is required.').max(500, 'Max 500 characters.'),
@@ -43,14 +44,12 @@ const stallSchema = z.object({
 });
 type StallFormData = z.infer<typeof stallSchema>;
 
-// Use imported ModelItem
 interface StallItemLocal extends ModelItemFromTypes {
-  // localId is already in ModelItemFromTypes via Item type
   uri?: string;
   isNew?: boolean;
   originalFilename?: string;
-  type?: string; // Mime type
-  name?: string; // Filename for new images (already part of Item as itemName, but image picker might use 'name')
+  type?: string;
+  name?: string;
 }
 
 const MyStallScreen: React.FC = () => {
@@ -58,22 +57,21 @@ const MyStallScreen: React.FC = () => {
   const navigation = useNavigation<NativeStackNavigationProp<AppStackParamList>>();
   const isFirstSetup = route.params?.isFirstSetup || false;
 
-  const { goblinName, pfpIdentifier, uuid: userUuid } = useAuthStoreMyStall();
-  const { isMarketOpen } = useMarketTimerMyStall();
+  const { goblinName, pfpIdentifier, uuid: userUuid } = useAuthStore();
+  const { isMarketOpen } = useMarketTimer();
   const {
     myStallData: stallDataFromStore, myStallServerData, fetchMyStall, saveMyStall,
     myStallFetchStatus, myStallSaveStatus, hasUnsavedChanges,
     setHasUnsavedChanges, resetMyStallToLastSaved, error: profileStoreError,
-  } = useProfileStoreMyStall();
+  } = useProfileStore();
 
   const [localItems, setLocalItems] = useState<StallItemLocal[]>([]);
   const [itemToRemove, setItemToRemove] = useState<StallItemLocal | null>(null);
   const [isRemoveConfirmVisible, setIsRemoveConfirmVisible] = useState(false);
-  // Correctly type the ref for DraggableFlatList
   const draggableFlatListRef = useRef<DraggableFlatList<StallItemLocal>>(null);
+  const maxImages = 10;
 
-
-  const { control, handleSubmit, reset: resetForm, formState: { errors, isDirty: formIsDirty, isValid: formIsValid }, watch, setValue } = useForm<StallFormData>({
+  const { control, handleSubmit, reset: resetForm, formState: { errors, isDirty: formIsDirty, isValid: formIsValid }, watch } = useForm<StallFormData>({
     resolver: zodResolver(stallSchema), mode: 'onChange',
     defaultValues: {
       offeredItemsDescription: '', wantedItemsDescription: '',
@@ -91,7 +89,7 @@ const MyStallScreen: React.FC = () => {
         offeredItemTags: stallDataFromStore.offeredItemTags || [],
         wantsTags: stallDataFromStore.wantsTags || [],
       });
-      const storeItemsAsLocal: StallItemLocal[] = stallDataFromStore.items.map((item: ModelItemFromTypes) => ({ // Ensure item is typed
+      const storeItemsAsLocal: StallItemLocal[] = stallDataFromStore.items.map((item: ModelItemFromTypes) => ({
         ...item,
         localId: item.dbId || item.localId || uuid.v4() as string,
         uri: item.imageFilename && !item.imageFilename.startsWith('file:') && !item.imageFilename.startsWith('http') && item.dbId
@@ -110,7 +108,7 @@ const MyStallScreen: React.FC = () => {
     const formValues = watchedFormValues;
     let itemsChanged = false;
     if (myStallServerData) {
-        const currentItemsForCompare = localItems.map(i => ({ itemName: i.itemName, imageFilename: i.isNew ? i.name : i.originalFilename, dbId: i.dbId })); // Use i.name for new items
+        const currentItemsForCompare = localItems.map(i => ({ itemName: i.itemName, imageFilename: i.isNew ? i.name : i.originalFilename, dbId: i.dbId }));
         const serverItemsForCompare = myStallServerData.items.map((i: ModelItemFromTypes) => ({ itemName: i.itemName, imageFilename: i.imageFilename, dbId: i.dbId }));
         itemsChanged = JSON.stringify(currentItemsForCompare) !== JSON.stringify(serverItemsForCompare);
     } else if (localItems.length > 0) {
@@ -124,24 +122,20 @@ const MyStallScreen: React.FC = () => {
   }, [localItems, watchedFormValues, myStallServerData, setHasUnsavedChanges, formIsDirty]);
 
   useFocusEffect( useCallback(() => {
-    let hasUnsavedChangesOnFocus = useProfileStoreMyStall.getState().hasUnsavedChanges;
+    const hasUnsavedOnFocus = useProfileStore.getState().hasUnsavedChanges;
     return () => {
-      if (hasUnsavedChangesOnFocus && useProfileStoreMyStall.getState().hasUnsavedChanges) {
+      if (hasUnsavedOnFocus && useProfileStore.getState().hasUnsavedChanges) {
         Alert.alert(
           "Discard Unsaved Wares?",
-          "You have unsaved changes to your stall. Are you sure you want to leave and discard them?",
+          "You have unsaved changes. Are you sure you want to leave and discard them?",
           [
-            { text: "Stay Put", style: "cancel", onPress: () => {} },
-            { text: "Discard Changes", style: "destructive", onPress: () => {
-                console.log("MyStallScreen: Discarding unsaved changes on blur confirmation.");
-                resetMyStallToLastSaved();
-            }}
+            { text: "Stay Put", style: "cancel" },
+            { text: "Discard", style: "destructive", onPress: () => resetMyStallToLastSaved() }
           ], {cancelable: false}
         );
       }
     };
   }, [resetMyStallToLastSaved]) );
-
 
   const handleImagePickerChange = useCallback((newImageObjectsFromPicker: AppImageObject[]) => {
     const newLocalItems: StallItemLocal[] = newImageObjectsFromPicker.map((imgObj, idx) => {
@@ -152,19 +146,18 @@ const MyStallScreen: React.FC = () => {
         return {
             localId: imgObj.localId,
             itemName: imgObj.name || `Shiny Treasure ${localItems.length + idx + 1}`,
-            imageFilename: imgObj.name || `new_item_${Date.now()}_${idx}.jpg`, // This is the client-derived name for new files
+            imageFilename: imgObj.name || `new_item_${Date.now()}_${idx}.jpg`,
             uri: imgObj.uri,
             isNew: true,
             type: imgObj.type,
-            name: imgObj.name, // Keep from ImageObject
+            name: imgObj.name,
             dbId: imgObj.dbId,
             originalFilename: imgObj.originalFilename,
         };
     });
     setLocalItems(newLocalItems);
     setHasUnsavedChanges(true);
-}, [localItems]);
-
+  }, [localItems]);
 
   const handleItemNameChange = (localId: string, newName: string) => {
     setLocalItems(prevItems => prevItems.map(item => item.localId === localId ? { ...item, itemName: newName } : item));
@@ -175,13 +168,9 @@ const MyStallScreen: React.FC = () => {
   const executeRemoveItem = () => {
     if (itemToRemove) {
       const updatedImageObjects = localItems.filter(item => item.localId !== itemToRemove.localId).map(li => ({
-          uri: li.uri || '',
-          name: li.name || li.itemName,
-          type: li.type,
-          localId: li.localId,
-          isNew: !!li.isNew,
-          originalFilename: li.originalFilename,
-          dbId: li.dbId,
+          uri: li.uri || '', name: li.name || li.itemName, type: li.type,
+          localId: li.localId, isNew: !!li.isNew,
+          originalFilename: li.originalFilename, dbId: li.dbId,
       }));
       handleImagePickerChange(updatedImageObjects);
     }
@@ -191,7 +180,6 @@ const MyStallScreen: React.FC = () => {
   const handleItemReorder = ({ data }: { data: StallItemLocal[] }) => {
     setLocalItems(data);
     setHasUnsavedChanges(true);
-    console.log("MyStallScreen: Items reordered by drag-and-drop.");
   };
 
   const onSaveStall: SubmitHandler<StallFormData> = async (formDataFromHook) => {
@@ -204,15 +192,12 @@ const MyStallScreen: React.FC = () => {
         return;
     }
 
-    const profileToSave: ModelUserProfileFromTypes = { // Explicitly type this
+    const profileToSave: ModelUserProfileFromTypes = {
       ...(stallDataFromStore || {} as ModelUserProfileFromTypes),
       _id: stallDataFromStore?._id || '',
-      uuid: userUuid!,
-      goblinName: goblinName!,
-      pfpIdentifier: pfpIdentifier!,
+      uuid: userUuid!, goblinName: goblinName!, pfpIdentifier: pfpIdentifier!,
       items: localItems.map(li => ({
-        localId: li.localId, // Always pass localId
-        dbId: li.dbId,
+        localId: li.localId, dbId: li.dbId,
         itemName: li.itemName,
         imageFilename: li.isNew ? (li.name || li.imageFilename) : (li.originalFilename || li.imageFilename),
       })),
@@ -229,13 +214,9 @@ const MyStallScreen: React.FC = () => {
     const newImagesToUpload: AppImageObject[] = localItems
       .filter(item => item.isNew && item.uri)
       .map(item => ({
-        uri: item.uri!,
-        name: item.name || item.imageFilename,
-        type: item.type || 'image/jpeg',
-        localId: item.localId,
-        isNew: true,
-        originalFilename: undefined,
-        dbId: undefined,
+        uri: item.uri!, name: item.name || item.imageFilename,
+        type: item.type || 'image/jpeg', localId: item.localId,
+        isNew: true, originalFilename: undefined, dbId: undefined,
     }));
 
     const savedProfile = await saveMyStall(profileToSave, newImagesToUpload, isFirstSetup);
@@ -243,7 +224,7 @@ const MyStallScreen: React.FC = () => {
         if (isFirstSetup) {
             navigation.replace('Main', { screen: 'Trades', params: { screen: 'ProfileFeedScreen'} });
         } else {
-            const updatedLocalItemsFromServer: StallItemLocal[] = savedProfile.items.map((serverItem: ModelItemFromTypes) => { // Type serverItem
+            const updatedLocalItemsFromServer: StallItemLocal[] = savedProfile.items.map((serverItem: ModelItemFromTypes) => {
                 const correspondingLocal = localItems.find(li => (li.isNew && li.localId === serverItem.localId) || (!li.isNew && li.dbId === serverItem.dbId) );
                 return {
                     ...serverItem,
@@ -284,7 +265,7 @@ const MyStallScreen: React.FC = () => {
           >
             <Box w={60} h={60} bg="$parchment100" borderRadius="$sm" justifyContent="center" alignItems="center" mr="$2">
                 {item.uri ? (
-                    <GlueImage source={{ uri: item.uri }} alt={item.itemName} size="full" borderRadius="$sm" resizeMode="cover"/>
+                    <GlueImage source={{ uri: item.uri }} alt={item.itemName} size="full" borderRadius={4} resizeMode="cover"/>
                 ) : (
                     <ThemedText size="xs" color="$textSecondary">Img {index !== undefined ? index + 1 : ''}</ThemedText>
                 )}
@@ -349,7 +330,7 @@ const MyStallScreen: React.FC = () => {
                     keyExtractor={(item) => item.localId}
                     renderItem={renderDraggableItem}
                     showsVerticalScrollIndicator={false}
-                    containerStyle={{ flex: 1 }} // Ensure it takes space
+                    containerStyle={{ flex: 1 }}
                 />
              )}
           </Box>
@@ -372,7 +353,7 @@ const MyStallScreen: React.FC = () => {
             (!hasUnsavedChanges && !isFirstSetup) ||
             myStallSaveStatus === 'loading' ||
             !formIsValid ||
-            (localItems.length === 0) // Always require at least one item
+            (localItems.length === 0)
           }
           size="lg"
           testID="save-stall-button"

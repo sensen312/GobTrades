@@ -1,17 +1,15 @@
 ﻿// src/components/IconButton.tsx
 import React from 'react';
-import { Pressable as GluePressable, Icon as GlueIcon } from '@gluestack-ui/themed';
-import type { ISizes } from '@gluestack-ui/themed';
+import { Pressable as GluePressable, useToken } from '@gluestack-ui/themed';
 import type { ComponentProps } from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { StyleProp, ViewStyle } from 'react-native';
 
-type GlueIconPropsIconButton = ComponentProps<typeof GlueIcon>;
 type GluePressablePropsIconButton = ComponentProps<typeof GluePressable>;
 
 interface IconButtonProps extends Omit<GluePressablePropsIconButton, 'children' | 'style'> {
   iconName: string;
-  iconSize?: ISizes['Icon'];
+  iconSize?: number;
   iconColor?: string;
   'aria-label': string;
   style?: StyleProp<ViewStyle>;
@@ -19,7 +17,7 @@ interface IconButtonProps extends Omit<GluePressablePropsIconButton, 'children' 
 
 const IconButton: React.FC<IconButtonProps> = ({
   iconName,
-  iconSize = "xl",
+  iconSize = 24,
   iconColor: iconColorProp = '$iconColor',
   'aria-label': ariaLabel,
   style,
@@ -28,6 +26,7 @@ const IconButton: React.FC<IconButtonProps> = ({
   ...pressableProps
 }) => {
   const finalIconColorToken = disabled ? '$textDisabled' : iconColorProp;
+  const resolvedIconColor = useToken('colors', finalIconColorToken as any);
 
   return (
     <GluePressable
@@ -47,12 +46,10 @@ const IconButton: React.FC<IconButtonProps> = ({
       hitSlop={{ top: 10, bottom: 10, left: 10, right: 10 }}
       {...pressableProps}
     >
-      <GlueIcon
-        as={MaterialCommunityIcons}
-        // @ts-ignore The 'name' prop is valid for MaterialCommunityIcons at runtime.
+      <MaterialCommunityIcons
         name={iconName}
         size={iconSize}
-        color={finalIconColorToken}
+        color={resolvedIconColor}
       />
     </GluePressable>
   );

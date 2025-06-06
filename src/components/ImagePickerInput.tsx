@@ -1,61 +1,57 @@
 ﻿// src/components/ImagePickerInput.tsx
-import React, { useState, useEffect } from 'react';
-import { Box, Pressable, Icon as GlueIcon, Image as GlueImage, Text as GlueText, HStack as HStackImagePicker } from '@gluestack-ui/themed';
-import type { ComponentProps } from 'react';
+import React, { useState, useEffect, FC } from 'react';
+import { Box, Pressable, Icon, Image, HStack } from '@gluestack-ui/themed';
 import { Alert, Platform, StyleProp, ViewStyle, FlatList } from 'react-native';
 import * as ExpoImagePicker from 'expo-image-picker';
-import { CameraIcon as LucideCameraIcon, ImageIcon as LucideImageIcon, Trash2Icon as LucideTrashIcon, AlertCircleIcon as LucideAlertCircleIcon } from 'lucide-react-native';
+import { CameraIcon, ImageIcon, TrashIcon, AlertCircleIcon } from 'lucide-react-native';
 import ThemedText from './ThemedText';
-import { ImageObject as AppImageObject } from '../types'; // Use AppImageObject for consistency
-import { IMAGE_API_PATH as IMAGE_API_PATH_PICKER } from '../api'; // Correct import
+import { ImageObject as AppImageObject } from '../types';
+import { IMAGE_API_PATH } from '../api';
 import uuid from 'react-native-uuid';
-import { showErrorToast as showErrorToastImagePicker } from '../utils/toast'; // Correct import
+import { showErrorToast } from '../utils/toast';
 
-type BoxPropsImagePicker = ComponentProps<typeof Box>;
-type PressablePropsImagePicker = ComponentProps<typeof Pressable>;
-type GlueImagePropsImagePicker = ComponentProps<typeof GlueImage>;
-type GlueIconPropsImagePicker = ComponentProps<typeof GlueIcon>;
-// type GlueTextPropsImagePicker = ComponentProps<typeof GlueText>; // Not directly spread
-type HStackPropsImagePicker = ComponentProps<typeof HStackImagePicker>;
-
-export interface ImagePickerInputProps {
-  initialImages?: AppImageObject[]; // URIs/filenames of existing images, now typed as AppImageObject
-  onImagesChange: (images: AppImageObject[]) => void; // Callback with full AppImageObject array
-  maxImages?: number;
-  style?: StyleProp<ViewStyle>;
+// CORRECTED: Exporting the interface so other files can import it.
+export interface ImagePickerObjectType {
+    uri: string;
+    type?: string;
+    name?: string;
+    localId: string;
+    isNew: boolean;
+    originalFilename?: string;
 }
 
-const ImagePickerInput: React.FC<ImagePickerInputProps> = ({
+export interface ImagePickerInputProps {
+  initialImages?: AppImageObject[];
+  onImagesChange: (images: AppImageObject[]) => void;
+  maxImages?: number;
+  style?: StyleProp<ViewStyle>;
+  isEditMode?: boolean;
+}
+
+const ImagePickerInput: FC<ImagePickerInputProps> = ({
   initialImages = [],
   onImagesChange,
   maxImages = 10,
   style,
+  isEditMode = false,
 }) => {
-  // Internal state uses AppImageObject for consistency
-  const [images, setImages] = useState<AppImageObject[]>([]);
+  const [images, setImages] = useState<ImagePickerObjectType[]>([]);
   const [error, setError] = useState<string | null>(null);
 
-  // Effect to process initialImages. Ensures full AppImageObject structure internally.
   useEffect(() => {
-    const processedInitialImages: AppImageObject[] = initialImages.map(img => {
-      // Ensure localId is present for all items, critical for keying and updates
-      const localId = img.localId || uuid.v4() as string;
-      let displayUri = img.uri;
-
-      // If it's an existing image (not new) and URI is just a filename, construct full path
-      if (img.isNew === false && img.originalFilename && !img.uri.startsWith('http') && !img.uri.startsWith('file:')) {
-        displayUri = `${IMAGE_API_PATH_PICKER}${img.originalFilename}`;
-      }
-      return {
-        ...img, // Spread original properties
-        localId, // Ensure localId
-        uri: displayUri, // Ensure URI is correctly formed for display
-        isNew: img.isNew !== undefined ? img.isNew : !img.dbId, // Infer isNew if not provided
-      };
-    });
-    setImages(processedInitialImages);
-  }, [initialImages]); // Rerun if initialImages prop changes
-
+    if (isEditMode) {
+      const mappedInitialImages: ImagePickerObjectType[] = initialImages.map(item => ({
+        uri: item.uri || `${IMAGE_API_PATH}${item.originalFilename}`,
+        name: item.name || item.originalFilename,
+        localId: item.localId,
+        isNew: false,
+        originalFilename: item.originalFilename,
+      }));
+      setImages(mappedInitialImages);
+    } else {
+      setImages([]);
+    }
+  }, [initialImages, isEditMode]);
 
   const requestPermissions = async (): Promise<boolean> => {
     setError(null);
@@ -64,7 +60,8 @@ const ImagePickerInput: React.FC<ImagePickerInputProps> = ({
       const mediaPerm = await ExpoImagePicker.requestMediaLibraryPermissionsAsync();
       if (cameraPerm.status !== 'granted' || mediaPerm.status !== 'granted') {
         const permError = 'Camera and Photo Library permissions are required.';
-        setError(permError); Alert.alert('Permission Required', permError, [{ text: 'OK' }]);
+        setError(permError);
+        Alert.alert('Permission Required', permError, [{ text: 'OK' }]);
         return false;
       }
     }
@@ -73,102 +70,100 @@ const ImagePickerInput: React.FC<ImagePickerInputProps> = ({
 
   const handleSelectImage = async (useCamera: boolean) => {
     if (images.length >= maxImages) {
-      showErrorToastImagePicker(`Maximum of ${maxImages} images allowed.`, "Stall Full"); return;
+      showErrorToast(`Maximum of ${maxImages} images allowed.`, "Stall Full");
+      return;
     }
     const hasPermission = await requestPermissions();
     if (!hasPermission) return;
 
     const options: ExpoImagePicker.ImagePickerOptions = {
-      mediaTypes: ExpoImagePicker.MediaTypeOptions.Images, allowsEditing: true,
-      aspect: [4, 3], quality: 0.7,
+      mediaTypes: ExpoImagePicker.MediaTypeOptions.Images,
+      allowsEditing: true,
+      aspect: [1, 1],
+      quality: 0.7,
     };
 
     let result;
     try {
-      if (useCamera) { result = await ExpoImagePicker.launchCameraAsync(options); }
-      else { result = await ExpoImagePicker.launchImageLibraryAsync(options); }
-
+      result = useCamera ? await ExpoImagePicker.launchCameraAsync(options) : await ExpoImagePicker.launchImageLibraryAsync(options);
       if (!result.canceled && result.assets && result.assets.length > 0) {
         const asset = result.assets[0];
-        const clientDerivedName = `stallItem_${Date.now()}_${images.length}.${asset.uri.split('.').pop() || 'jpg'}`;
-        const newImage: AppImageObject = { // Ensure new image conforms to AppImageObject
+        const newImage: ImagePickerObjectType = {
           uri: asset.uri,
           type: asset.mimeType || 'image/jpeg',
-          name: asset.fileName || clientDerivedName,
-          localId: uuid.v4() as string, // Generate new localId for new image
+          name: asset.fileName || `stall_item_${Date.now()}.${asset.uri.split('.').pop() || 'jpg'}`,
+          localId: uuid.v4() as string,
           isNew: true,
-          // originalFilename and dbId will be undefined for new images
         };
         const updatedImages = [...images, newImage];
         setImages(updatedImages);
-        onImagesChange(updatedImages); // Pass the updated array of AppImageObject
+        onImagesChange(updatedImages as AppImageObject[]);
         setError(null);
       }
     } catch (e: any) {
       console.error("ImagePickerInput Error:", e);
       setError(`Failed to ${useCamera ? 'take photo' : 'select image'}: ${e.message || 'Unknown error'}`);
-      showErrorToastImagePicker(`Failed to ${useCamera ? 'take photo' : 'select image'}.`, "Image Error");
+      showErrorToast(`Failed to ${useCamera ? 'take photo' : 'select image'}.`, "Image Error");
     }
   };
 
-  // Remove image by its unique localId
   const handleRemoveImage = (localIdToRemove: string) => {
     const updatedImages = images.filter(img => img.localId !== localIdToRemove);
     setImages(updatedImages);
-    onImagesChange(updatedImages); // Pass the updated array
+    onImagesChange(updatedImages as AppImageObject[]);
     setError(null);
   };
 
-  const renderImagePreview = ({ item, index }: { item: AppImageObject; index: number }) => (
-    <BoxPropsImagePicker mr="$3" mb="$3" position="relative" testID={`image-preview-${item.localId}`}>
-      <GlueImagePropsImagePicker
+  const renderImagePreview = ({ item, index }: { item: ImagePickerObjectType; index: number }) => (
+    <Box mr="$3" mb="$3" position="relative" testID={`image-preview-${item.localId}`}>
+      <Image
         source={{ uri: item.uri }}
         alt={item.name || item.originalFilename || `Stall item ${index + 1}`}
         w={100} h={100} borderRadius="$md" bg="$parchment100"
       />
-      <PressablePropsImagePicker
+      <Pressable
         position="absolute" top={-8} right={-8} bg="$errorBase" borderRadius="$full" p="$1.5"
-        onPress={() => handleRemoveImage(item.localId)} // Use localId for removal
+        onPress={() => handleRemoveImage(item.localId)}
         accessibilityLabel={`Remove image ${item.name || item.originalFilename || index + 1}`}
         sx={{ ":hover": { bg: "$error700" } }} testID={`remove-image-button-${item.localId}`}
       >
-        <GlueIconPropsImagePicker as={LucideTrashIcon} color="$textLight" size="sm" />
-      </PressablePropsImagePicker>
-    </BoxPropsImagePicker>
+        <Icon as={TrashIcon} color="$textLight" size="sm" />
+      </Pressable>
+    </Box>
   );
 
   const renderAddImageButtons = () => (
-    <HStackImagePicker space="md">
-      <PressablePropsImagePicker justifyContent="center" alignItems="center" w={100} h={100} bg="$parchment100" borderRadius="$md" borderWidth={1} borderColor="$parchment500" borderStyle="dashed" onPress={() => handleSelectImage(true)} accessibilityLabel="Add image using camera" sx={{ ":hover": { bg: "$parchment200" } }} testID="add-image-camera-button">
-        <GlueIconPropsImagePicker as={LucideCameraIcon} size="xl" color="$textSecondary" />
+    <HStack space="md">
+      <Pressable justifyContent="center" alignItems="center" w={100} h={100} bg="$parchment100" borderRadius="$md" borderWidth={1} borderColor="$parchment500" borderStyle="dashed" onPress={() => handleSelectImage(true)} accessibilityLabel="Add image using camera" sx={{ ":hover": { bg: "$parchment200" } }} testID="add-image-camera-button">
+        <Icon as={CameraIcon} size="xl" color="$textSecondary" />
         <ThemedText size="xs" mt="$1" color="$textSecondary">Camera</ThemedText>
-      </PressablePropsImagePicker>
-      <PressablePropsImagePicker justifyContent="center" alignItems="center" w={100} h={100} bg="$parchment100" borderRadius="$md" borderWidth={1} borderColor="$parchment500" borderStyle="dashed" onPress={() => handleSelectImage(false)} accessibilityLabel="Add image from gallery" sx={{ ":hover": { bg: "$parchment200" } }} testID="add-image-gallery-button">
-        <GlueIconPropsImagePicker as={LucideImageIcon} size="xl" color="$textSecondary" />
+      </Pressable>
+      <Pressable justifyContent="center" alignItems="center" w={100} h={100} bg="$parchment100" borderRadius="$md" borderWidth={1} borderColor="$parchment500" borderStyle="dashed" onPress={() => handleSelectImage(false)} accessibilityLabel="Add image from gallery" sx={{ ":hover": { bg: "$parchment200" } }} testID="add-image-gallery-button">
+        <Icon as={ImageIcon} size="xl" color="$textSecondary" />
         <ThemedText size="xs" mt="$1" color="$textSecondary">Gallery</ThemedText>
-      </PressablePropsImagePicker>
-    </HStackImagePicker>
+      </Pressable>
+    </HStack>
   );
 
   return (
-    <BoxPropsImagePicker style={style} mb="$4">
+    <Box style={style} mb="$4">
       {error && (
-        <BoxPropsImagePicker flexDirection="row" alignItems="center" bg="$errorBg" p="$2" borderRadius="$sm" mb="$2">
-          <GlueIconPropsImagePicker as={LucideAlertCircleIcon} color="$error700" size="sm" mr="$2" />
+        <Box flexDirection="row" alignItems="center" bg="$errorBg" p="$2" borderRadius="$sm" mb="$2">
+          <Icon as={AlertCircleIcon} color="$error700" size="sm" mr="$2" />
           <ThemedText color="$error700" size="sm">{error}</ThemedText>
-        </BoxPropsImagePicker>
+        </Box>
       )}
       <FlatList
         horizontal
         data={images}
         renderItem={renderImagePreview}
-        keyExtractor={(item) => item.localId} // Use mandatory localId as key
+        keyExtractor={(item) => item.localId}
         showsHorizontalScrollIndicator={false}
         ListFooterComponent={images.length < maxImages ? renderAddImageButtons() : null}
         ListFooterComponentStyle={{ marginLeft: images.length > 0 ? 12 : 0 }}
         contentContainerStyle={{ paddingVertical: 8 }}
       />
-    </BoxPropsImagePicker>
+    </Box>
   );
 };
 export default ImagePickerInput;
