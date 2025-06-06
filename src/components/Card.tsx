@@ -1,8 +1,7 @@
-﻿// src/components/Card.tsx
-import React from 'react';
+﻿import React from 'react';
 import { Box } from '@gluestack-ui/themed';
 import type { ComponentProps } from 'react';
-import { Platform } from 'react-native'; // Correct import source
+import { Platform } from 'react-native';
 
 type BoxProps = ComponentProps<typeof Box>;
 

@@ -4,6 +4,7 @@ import { Platform } from 'react-native';
 import { createBottomTabNavigator } from '@react-navigation/bottom-tabs';
 import { useTheme, Icon } from '@gluestack-ui/themed';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
+
 import { MainTabsParamList } from './types';
 import AppHeader from '../components/AppHeader';
 import ProfileFeedNavigator from './ProfileFeedNavigator';
@@ -19,13 +20,13 @@ const MainNavigator: React.FC = () => {
 
   return (
     <Tab.Navigator
-      screenOptions={({ route }) => ({
+      screenOptions={{
         header: () => <AppHeader />,
         tabBarActiveTintColor: colors.primary500 as string,
         tabBarInactiveTintColor: colors.textSecondary as string,
-        tabBarStyle: { backgroundColor: colors.backgroundCard as string, borderTopColor: colors.borderLight as string, height: Platform.OS === 'ios' ? 90 : 70, paddingTop: 5, paddingBottom: Platform.OS === 'ios' ? 30 : 5, },
+        tabBarStyle: { backgroundColor: colors.backgroundCard as string, borderTopColor: colors.borderLight as string, height: Platform.OS === 'ios' ? 90 : 70, paddingTop: 5, paddingBottom: Platform.OS === 'ios' ? 30 : 5 },
         tabBarLabelStyle: { fontFamily: fonts.body as string, fontSize: 11, fontWeight: '600' },
-      })}
+      }}
     >
       <Tab.Screen
         name="Trades"

@@ -13,7 +13,7 @@ import { AppStackParamList } from '../../../navigation/types';
 type PropsSettings = NativeStackScreenProps<AppStackParamList, 'Settings'>;
 
 const SettingsScreen: React.FC<PropsSettings> = ({ navigation }) => {
-    const { goblinName, pfpIdentifier, clearProfileAndData, uuid, isLoading: authIsLoading } = useAuthStore();
+    const { goblinName, pfpIdentifier, clearAuthentication, uuid, isLoading: authIsLoading } = useAuthStore();
 
     const openAppSettings = () => {
         Linking.openSettings().catch(err => console.warn("Failed to open settings:", err));
@@ -29,7 +29,7 @@ const SettingsScreen: React.FC<PropsSettings> = ({ navigation }) => {
                     text: "Retire & Empty Stall",
                     style: "destructive",
                     onPress: async () => {
-                        await clearProfileAndData();
+                        await clearAuthentication();
                     }
                 }
             ]
@@ -48,20 +48,16 @@ const SettingsScreen: React.FC<PropsSettings> = ({ navigation }) => {
             <VStack p="$4" space="lg" pb="$20">
                 <Box alignItems="center" testID="settings-profile-section">
                     <UserPfpDisplay pfpIdentifier={pfpIdentifier} userName={goblinName || undefined} size="xl" />
-                    <Heading mt="$2" size="xl">{goblinName || 'A Mysterious Goblin'}</Heading>
+                    <Heading mt="$2" size="xl">{goblinName || 'Goblin Trader'}</Heading>
                     {uuid && <ThemedText size="xs" color="$textSecondary" selectable={true}>Trader ID: {uuid}</ThemedText>}
                 </Box>
-
-                <Divider />
-
+                <Divider my="$3" />
                 <Heading size="md">App Permissions</Heading>
                 <Pressable onPress={openAppSettings} accessibilityRole="button">
                     <ThemedText color="$primary500">Manage Camera & Photo Permissions</ThemedText>
                 </Pressable>
                 <ThemedText size='xs' color='$textSecondary'>Used for adding images to your stall.</ThemedText>
-
-                <Divider />
-
+                <Divider my="$3" />
                 <Heading size="md">FAQ - Goblin Market Guide</Heading>
                 {faqItems.map((item, index) => (
                     <Box key={index} mb="$3">
@@ -69,9 +65,7 @@ const SettingsScreen: React.FC<PropsSettings> = ({ navigation }) => {
                         <ThemedText size='sm'>{item.a}</ThemedText>
                     </Box>
                 ))}
-
-                <Divider />
-
+                <Divider my="$3" />
                 <PrimaryButton
                     title="Retire Goblin & Empty Stall"
                     onPress={handleClearProfile}

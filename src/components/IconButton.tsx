@@ -1,7 +1,8 @@
 ﻿// src/components/IconButton.tsx
 import React from 'react';
 import { Pressable as GluePressable, Icon as GlueIcon } from '@gluestack-ui/themed';
-import type { ComponentProps, ISizes } from '@gluestack-ui/themed';
+import type { ISizes } from '@gluestack-ui/themed';
+import type { ComponentProps } from 'react';
 import MaterialCommunityIcons from 'react-native-vector-icons/MaterialCommunityIcons';
 import { StyleProp, ViewStyle } from 'react-native';
 
