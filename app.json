@@ -30,11 +30,6 @@
       "expo-image-picker"
       
     ],
-    "extra": {
-      "eas": {
-        "projectId": "YOUR_EAS_PROJECT_ID_HERE_IF_USING_EAS_BUILD"
-      }
-    },
     "owner": "sensen312"
   }
 }
