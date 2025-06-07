@@ -119,7 +119,7 @@ const ImagePickerInput: FC<ImagePickerInputProps> = ({
       <Image
         source={{ uri: item.uri }}
         alt={item.name || item.originalFilename || `Stall item ${index + 1}`}
-        w={100} h={100} borderRadius="$md" bg="$parchment100"
+        w={100} h={100} borderRadius={6} bg="$parchment100"
       />
       <Pressable
         position="absolute" top={-8} right={-8} bg="$errorBase" borderRadius="$full" p="$1.5"
