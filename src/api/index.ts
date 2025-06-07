@@ -7,7 +7,7 @@ import { useAuthStore } from '../features/auth/store/authStore';
 // with your actual live backend URL (e.g., your ngrok URL for local development,
 // or http://localhost:PORT if using an emulator that can access your local machine).
 // This is the ONLY placeholder that should remain in the entire codebase.
-export const API_BASE_URL = 'YOUR_NGROK_OR_BACKEND_URL_HERE_REPLACE_ME_IMMEDIATELY'; // NO trailing slash
+export const API_BASE_URL = 'https://5a61-71-47-5-48.ngrok-free.app'; // NO trailing slash
 
 // Base path for constructing full image URLs if images are served from the backend.
 // For Phase 1, frontend primarily deals with local URIs for new images and receives filenames for existing ones.

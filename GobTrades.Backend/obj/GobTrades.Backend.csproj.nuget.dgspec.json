@@ -1,23 +1,23 @@
 {
   "format": 1,
   "restore": {
-    "C:\\Users\\sense\\Desktop\\GobTrades\\GobTrades.Backend\\GobTrades.Backend.csproj": {}
+    "C:\\Users\\sense\\desktop\\Gobtrades\\GobTrades.Backend\\GobTrades.Backend.csproj": {}
   },
   "projects": {
-    "C:\\Users\\sense\\Desktop\\GobTrades\\GobTrades.Backend\\GobTrades.Backend.csproj": {
+    "C:\\Users\\sense\\desktop\\Gobtrades\\GobTrades.Backend\\GobTrades.Backend.csproj": {
       "version": "1.0.0",
       "restore": {
-        "projectUniqueName": "C:\\Users\\sense\\Desktop\\GobTrades\\GobTrades.Backend\\GobTrades.Backend.csproj",
+        "projectUniqueName": "C:\\Users\\sense\\desktop\\Gobtrades\\GobTrades.Backend\\GobTrades.Backend.csproj",
         "projectName": "GobTrades.Backend",
-        "projectPath": "C:\\Users\\sense\\Desktop\\GobTrades\\GobTrades.Backend\\GobTrades.Backend.csproj",
+        "projectPath": "C:\\Users\\sense\\desktop\\Gobtrades\\GobTrades.Backend\\GobTrades.Backend.csproj",
         "packagesPath": "C:\\Users\\sense\\.nuget\\packages\\",
-        "outputPath": "C:\\Users\\sense\\Desktop\\GobTrades\\GobTrades.Backend\\obj\\",
+        "outputPath": "C:\\Users\\sense\\desktop\\Gobtrades\\GobTrades.Backend\\obj\\",
         "projectStyle": "PackageReference",
         "fallbackFolders": [
           "C:\\Program Files (x86)\\Microsoft Visual Studio\\Shared\\NuGetPackages"
         ],
         "configFilePaths": [
-          "C:\\Users\\sense\\Desktop\\GobTrades\\NuGet.Config",
+          "C:\\Users\\sense\\desktop\\Gobtrades\\NuGet.Config",
           "C:\\Users\\sense\\AppData\\Roaming\\NuGet\\NuGet.Config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.FallbackLocation.config",
           "C:\\Program Files (x86)\\NuGet\\Config\\Microsoft.VisualStudio.Offline.config"

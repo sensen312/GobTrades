@@ -28,7 +28,6 @@
     "plugins": [
       "expo-font",
       "expo-image-picker"
-      
     ],
     "extra": {
       "eas": {

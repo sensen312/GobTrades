@@ -1,8 +1,8 @@
 {
   "version": 2,
-  "dgSpecHash": "wF4MHo7AuGE=",
+  "dgSpecHash": "gNGAhyxQN70=",
   "success": true,
-  "projectFilePath": "C:\\Users\\sense\\Desktop\\GobTrades\\GobTrades.Backend\\GobTrades.Backend.csproj",
+  "projectFilePath": "C:\\Users\\sense\\desktop\\Gobtrades\\GobTrades.Backend\\GobTrades.Backend.csproj",
   "expectedPackageFiles": [
     "C:\\Users\\sense\\.nuget\\packages\\awssdk.core\\3.7.100.14\\awssdk.core.3.7.100.14.nupkg.sha512",
     "C:\\Users\\sense\\.nuget\\packages\\awssdk.securitytoken\\3.7.100.14\\awssdk.securitytoken.3.7.100.14.nupkg.sha512",
